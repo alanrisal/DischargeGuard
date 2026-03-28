@@ -1,15 +1,42 @@
 import type { ChecklistItem } from "./types";
 
+// Maria Garcia — post-cholecystectomy, T2 diabetes, hypertension
 export const CHECKLIST: ChecklistItem[] = [
-  { id: "met",   name: "Metformin 500mg",        detail: "Twice daily with meals · Diabetes",       category: "medication" },
-  { id: "lis",   name: "Lisinopril 10mg",         detail: "Once daily morning · Blood pressure",     category: "medication" },
-  { id: "ace",   name: "Acetaminophen 500mg",     detail: "Every 6 hrs as needed · Pain",            category: "medication" },
-  { id: "ome",   name: "Omeprazole 20mg",         detail: "Once daily before breakfast · Stomach",   category: "medication" },
-  { id: "wound", name: "Wound Care",              detail: "Change dressing · Keep dry 48hr",         category: "care" },
-  { id: "warn",  name: "Warning Signs",           detail: "Fever >101°F · Bleeding · Chest pain",    category: "safety" },
-  { id: "fu1",   name: "Follow-up: Dr. Thompson", detail: "April 3 at 10:00 AM · Surgeon",           category: "appointment" },
-  { id: "fu2",   name: "Follow-up: Dr. Chen",     detail: "April 10 at 2:30 PM · PCP",               category: "appointment" },
-  { id: "act",   name: "Activity Limits",         detail: "No lifting >10 lbs · No driving 1 wk",   category: "restriction" },
+  { id: "met",   name: "Metformin 500mg",        detail: "Twice daily with meals · Diabetes",         category: "medication" },
+  { id: "lis",   name: "Lisinopril 10mg",         detail: "Once daily morning · Hypertension",         category: "medication" },
+  { id: "ome",   name: "Omeprazole 20mg",         detail: "Once daily before breakfast · Stomach",     category: "medication" },
+  { id: "ace",   name: "Acetaminophen 500mg",     detail: "Every 6 hrs as needed · Surgical pain",     category: "medication" },
+  { id: "wound", name: "Wound Care",              detail: "Change dressing · Keep dry 48hr",           category: "care" },
+  { id: "warn",  name: "Warning Signs",           detail: "Fever >101°F · Bleeding · Chest pain",      category: "safety" },
+  { id: "fu1",   name: "Follow-up: Dr. Thompson", detail: "April 3 at 10:00 AM · Surgeon",             category: "appointment" },
+  { id: "fu2",   name: "Follow-up: Dr. Chen",     detail: "April 10 at 2:30 PM · PCP",                 category: "appointment" },
+  { id: "act",   name: "Activity Limits",         detail: "No lifting >10 lbs · No driving 1 wk",     category: "restriction" },
+];
+
+// Wei Chen — post-cardiac stent, hypertension, atrial fibrillation
+export const CHECKLIST_WEI: ChecklistItem[] = [
+  { id: "asp",   name: "Aspirin 81mg",            detail: "Once daily · Anti-platelet therapy",        category: "medication" },
+  { id: "clo",   name: "Clopidogrel 75mg",        detail: "Once daily · Prevent stent clotting",       category: "medication" },
+  { id: "met2",  name: "Metoprolol 25mg",         detail: "Twice daily · Heart rate control",          category: "medication" },
+  { id: "ato",   name: "Atorvastatin 40mg",       detail: "Once daily at night · Cholesterol",         category: "medication" },
+  { id: "act2",  name: "Activity Restrictions",   detail: "No strenuous activity 2 wks · Walk daily",  category: "restriction" },
+  { id: "warn2", name: "Warning Signs",           detail: "Chest pain · Shortness of breath · Dizzy",  category: "safety" },
+  { id: "diet",  name: "Dietary Guidelines",      detail: "Low sodium · Low fat · No grapefruit",      category: "care" },
+  { id: "fu3",   name: "Follow-up: Dr. Patel",    detail: "April 5 at 9:00 AM · Cardiologist",         category: "appointment" },
+  { id: "mon",   name: "BP Monitoring",           detail: "Check BP twice daily · Log readings",       category: "care" },
+];
+
+// James Wilson — post-hip replacement, COPD, type 2 diabetes
+export const CHECKLIST_JAMES: ChecklistItem[] = [
+  { id: "oxy",   name: "Oxycodone 5mg",           detail: "Every 4-6 hrs as needed · Post-op pain",    category: "medication" },
+  { id: "cel",   name: "Celecoxib 200mg",         detail: "Twice daily with food · Inflammation",      category: "medication" },
+  { id: "war",   name: "Warfarin 5mg",            detail: "Once daily · DVT prevention post-surgery",  category: "medication" },
+  { id: "sal",   name: "Salbutamol Inhaler",      detail: "2 puffs as needed · COPD rescue",           category: "medication" },
+  { id: "met3",  name: "Metformin 1000mg",        detail: "Twice daily with meals · Diabetes",         category: "medication" },
+  { id: "pt",    name: "Physical Therapy",        detail: "Daily exercises · Walker required 4 wks",   category: "care" },
+  { id: "warn3", name: "Warning Signs",           detail: "Leg swelling · Breathing difficulty · Fever", category: "safety" },
+  { id: "fu4",   name: "Follow-up: Dr. Nguyen",   detail: "April 4 at 11:00 AM · Orthopedics",         category: "appointment" },
+  { id: "inr",   name: "INR Monitoring",          detail: "Blood test April 1 · Warfarin dose check",  category: "care" },
 ];
 
 export const SUBTITLES = [
@@ -55,11 +82,11 @@ export const EVENTS = [
 ];
 
 export const GRAPH_NODES = [
-  { id: "CareCoord",  label: ["Care", "Coord."],          cx: 150, cy: 105, r: 22, color: "#e07b54" },
-  { id: "DischargeR", label: ["Discharge", "Reader"],     cx: 55,  cy: 45,  r: 16, color: "#7c9cbf" },
-  { id: "VoiceCoach", label: ["Voice", "Coach"],          cx: 245, cy: 45,  r: 16, color: "#5aab8a" },
-  { id: "Compr.",     label: ["Comprehension", "Check"],  cx: 55,  cy: 165, r: 16, color: "#c4a35a" },
-  { id: "EscalAgent", label: ["Escalation", "Agent"],     cx: 245, cy: 165, r: 16, color: "#c46a6a" },
+  { id: "CareCoord",  label: ["Care", "Coord."],          cx: 150, cy: 105, r: 22, color: "#2563eb" },
+  { id: "DischargeR", label: ["Discharge", "Reader"],     cx: 55,  cy: 45,  r: 16, color: "#7c3aed" },
+  { id: "VoiceCoach", label: ["Voice", "Coach"],          cx: 245, cy: 45,  r: 16, color: "#0891b2" },
+  { id: "Compr.",     label: ["Comprehension", "Check"],  cx: 55,  cy: 165, r: 16, color: "#0284c7" },
+  { id: "EscalAgent", label: ["Escalation", "Agent"],     cx: 245, cy: 165, r: 16, color: "#dc2626" },
 ];
 
 export const GRAPH_EDGES: [string, string][] = [
@@ -69,4 +96,76 @@ export const GRAPH_EDGES: [string, string][] = [
   ["CareCoord", "EscalAgent"],
   ["VoiceCoach", "Compr."],
   ["Compr.", "EscalAgent"],
+];
+
+// ── Patient history demo data (will be replaced by Google ADK + ElevenLabs API) ──
+
+export const PATIENT_PRESCRIPTIONS = [
+  { name: "Metformin 500mg",      prescribed: "Jan 12, 2026", by: "Dr. Chen",     status: "active",      refills: 3, purpose: "Type 2 Diabetes" },
+  { name: "Lisinopril 10mg",      prescribed: "Nov 4, 2025",  by: "Dr. Chen",     status: "active",      refills: 5, purpose: "Hypertension" },
+  { name: "Omeprazole 20mg",      prescribed: "Mar 27, 2026", by: "Dr. Thompson", status: "new",         refills: 1, purpose: "Stomach protection post-op" },
+  { name: "Acetaminophen 500mg",  prescribed: "Mar 27, 2026", by: "Dr. Thompson", status: "new",         refills: 0, purpose: "Post-surgical pain" },
+  { name: "Atorvastatin 20mg",    prescribed: "Aug 18, 2025", by: "Dr. Chen",     status: "active",      refills: 6, purpose: "Cholesterol" },
+  { name: "Aspirin 81mg",         prescribed: "Aug 18, 2025", by: "Dr. Chen",     status: "active",      refills: 11, purpose: "Cardiovascular prevention" },
+  { name: "Warfarin 2.5mg",       prescribed: "Feb 2, 2025",  by: "Dr. Patel",    status: "discontinued", refills: 0, purpose: "Blood clot prevention" },
+];
+
+export const PATIENT_VISITS = [
+  { date: "Mar 27, 2026", type: "Discharge",        provider: "Dr. Thompson",  dept: "Surgery",       note: "Post-cholecystectomy discharge. Stable." },
+  { date: "Mar 25, 2026", type: "Surgery",           provider: "Dr. Thompson",  dept: "Surgery",       note: "Laparoscopic cholecystectomy — uncomplicated." },
+  { date: "Mar 24, 2026", type: "Pre-op",            provider: "Dr. Thompson",  dept: "Surgery",       note: "Pre-surgical assessment. Cleared for procedure." },
+  { date: "Feb 10, 2026", type: "Follow-up",         provider: "Dr. Chen",      dept: "Primary Care",  note: "HbA1c 7.2 — diabetes management on track." },
+  { date: "Nov 4, 2025",  type: "Annual Physical",   provider: "Dr. Chen",      dept: "Primary Care",  note: "BP 138/88. Lisinopril dose maintained." },
+  { date: "Aug 18, 2025", type: "Cardiology Consult",provider: "Dr. Patel",     dept: "Cardiology",    note: "Lipid panel reviewed. Statin therapy initiated." },
+];
+
+export const PATIENT_CALL_HISTORY = [
+  {
+    date: "Mar 27, 2026",
+    time: "2:14 PM",
+    duration: "1:05",
+    type: "Post-discharge",
+    status: "completed",
+    agent: "ElevenLabs VoiceCoach",
+    language: "ES",
+    comprehension: 78,
+    flags: ["Persistent headache flagged", "Nurse callback scheduled"],
+    summary: "Patient understood 7/9 discharge items. Confused Metformin with BP medication — re-explained successfully. Headache symptom escalated to care team.",
+  },
+  {
+    date: "Feb 10, 2026",
+    time: "10:30 AM",
+    duration: "0:48",
+    type: "Medication check-in",
+    status: "completed",
+    agent: "ElevenLabs VoiceCoach",
+    language: "ES",
+    comprehension: 92,
+    flags: [],
+    summary: "Patient confirmed taking all medications correctly. No concerns raised. Follow-up appointment confirmed.",
+  },
+  {
+    date: "Nov 6, 2025",
+    time: "9:05 AM",
+    duration: "0:32",
+    type: "Post-discharge",
+    status: "completed",
+    agent: "ElevenLabs VoiceCoach",
+    language: "ES",
+    comprehension: 65,
+    flags: ["Missed dose reported"],
+    summary: "Patient reported missing Lisinopril dose twice. Nurse notified. Medication adherence counseling scheduled.",
+  },
+  {
+    date: "Aug 20, 2025",
+    time: "3:45 PM",
+    duration: "0:00",
+    type: "Medication check-in",
+    status: "no-answer",
+    agent: "ElevenLabs VoiceCoach",
+    language: "ES",
+    comprehension: 0,
+    flags: [],
+    summary: "No answer. Voicemail left. Retry scheduled.",
+  },
 ];
