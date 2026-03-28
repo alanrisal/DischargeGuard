@@ -10,7 +10,7 @@ interface Props {
 export default function AgentGraph({ particles, a2aMsgs }: Props) {
   return (
     <div style={{ display: "flex", flexDirection: "column", height: "100%" }}>
-      <div style={{ fontSize: 10, fontWeight: 600, letterSpacing: "1.5px", textTransform: "uppercase", color: "#a08070", marginBottom: 12, fontFamily: "monospace" }}>
+      <div style={{ fontSize: 10, fontWeight: 600, letterSpacing: "1.5px", textTransform: "uppercase", color: "#6b7a9e", marginBottom: 12, fontFamily: "monospace" }}>
         Agent Network · A2A
       </div>
 
@@ -20,7 +20,7 @@ export default function AgentGraph({ particles, a2aMsgs }: Props) {
           {GRAPH_EDGES.map(([a, b], i) => {
             const na = GRAPH_NODES.find((n) => n.id === a)!;
             const nb = GRAPH_NODES.find((n) => n.id === b)!;
-            return <line key={i} x1={na.cx} y1={na.cy} x2={nb.cx} y2={nb.cy} stroke="#e8d5c4" strokeWidth="1" />;
+            return <line key={i} x1={na.cx} y1={na.cy} x2={nb.cx} y2={nb.cy} stroke="#dde3f5" strokeWidth="1" />;
           })}
 
           {/* Particles */}
@@ -65,9 +65,9 @@ export default function AgentGraph({ particles, a2aMsgs }: Props) {
       <div style={{ display: "flex", flexDirection: "column", gap: 4, flex: 1, overflow: "hidden" }}>
         {a2aMsgs.length === 0 ? (
           <div style={{
-            fontSize: 10, fontFamily: "monospace", color: "#c4a88a",
-            background: "#fdf6f0", border: "1px solid #e8d5c4",
-            borderRadius: 5, padding: "4px 8px", opacity: 0.5,
+            fontSize: 10, fontFamily: "monospace", color: "#c7d2e8",
+            background: "#f8faff", border: "1px solid #dde3f5",
+            borderRadius: 5, padding: "4px 8px", opacity: 0.6,
           }}>
             — A2A messages will appear here
           </div>
@@ -75,14 +75,14 @@ export default function AgentGraph({ particles, a2aMsgs }: Props) {
           a2aMsgs.map((m, i) => (
             <div key={i} style={{
               fontSize: 10, fontFamily: "monospace",
-              background: "#fdf6f0", border: "1px solid #e8d5c4",
+              background: "#f8faff", border: "1px solid #dde3f5",
               borderRadius: 5, padding: "4px 8px",
               display: "flex", gap: 6, alignItems: "flex-start",
             }}>
-              <span style={{ color: "#e07b54", flexShrink: 0 }}>{m.from}</span>
-              <span style={{ color: "#c4a88a", flexShrink: 0 }}>→</span>
-              <span style={{ color: "#7c9cbf", flexShrink: 0 }}>{m.to}</span>
-              <span style={{ color: "#a08070", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", flex: 1 }}>{m.msg}</span>
+              <span style={{ color: "#2563eb", flexShrink: 0 }}>{m.from}</span>
+              <span style={{ color: "#c7d2e8", flexShrink: 0 }}>→</span>
+              <span style={{ color: "#7c3aed", flexShrink: 0 }}>{m.to}</span>
+              <span style={{ color: "#6b7a9e", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", flex: 1 }}>{m.msg}</span>
             </div>
           ))
         )}
