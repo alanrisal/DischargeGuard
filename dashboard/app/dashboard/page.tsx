@@ -1,128 +1,110 @@
+"use client";
+import { useCallStream } from "@/lib/useCallStream";
+import CallPanel from "@/components/CallPanel";
+import ChecklistPanel from "@/components/ChecklistPanel";
+import AgentGraph from "@/components/AgentGraph";
+import AlertPanel from "@/components/AlertPanel";
+import SummaryCard from "@/components/SummaryCard";
 import Link from "next/link";
 
-// Minimal static panels — wired up to real data in later sprints
-const meds = [
-  { name: "Metformin 500mg", status: "green",  note: "Twice daily with food" },
-  { name: "Lisinopril 10mg", status: "yellow", note: "Once daily, morning" },
-  { name: "Warfarin 5mg",    status: "red",    note: "Requires INR monitoring" },
-];
-
-const statusColor: Record<string, string> = {
-  green:  "var(--green)",
-  yellow: "var(--yellow)",
-  red:    "var(--red)",
-};
-
-const agentEvents = [
-  { agent: "discharge_reader",    msg: "Extracted 3 medications from discharge notes" },
-  { agent: "comprehension_check", msg: "Warfarin comprehension score: RED" },
-  { agent: "escalation",          msg: "Alert sent — nurse review required" },
-  { agent: "voice_coach",         msg: "Switching to simplified language" },
-];
-
 export default function DashboardPage() {
-  return (
-    <main className="min-h-screen p-6 flex flex-col gap-6 max-w-5xl mx-auto">
+  const {
+    phase, items, subtitle, alerts, a2aMsgs, particles,
+    callTime, comprehension,
+    startDemo, resetDemo,
+  } = useCallStream();
 
-      {/* Top bar */}
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-lg font-semibold">Live Call Dashboard</h1>
-          <p className="text-xs mt-0.5" style={{ color: "var(--muted)" }}>
-            Patient: Maria Garcia · Spanish · Post-surgery
-          </p>
+  return (
+    <div style={{
+      minHeight: "100vh",
+      display: "flex",
+      flexDirection: "column",
+      background: "#fffaf7",
+      color: "#3a2a1e",
+      fontFamily: "'Outfit', system-ui, sans-serif",
+    }}>
+      <header style={{
+        display: "flex",
+        alignItems: "center",
+        justifyContent: "space-between",
+        padding: "14px 24px",
+        borderBottom: "1px solid #e8d5c4",
+        background: "#fff8f3",
+      }}>
+        <div style={{ display: "flex", alignItems: "center", gap: 10, fontSize: 20, fontWeight: 700 }}>
+          <div style={{
+            width: 32, height: 32,
+            background: "linear-gradient(135deg, #e07b54, #c4a35a)",
+            borderRadius: 8, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 16,
+          }}>
+            {"🏥"}
+          </div>
+          {"Discharge"}
+          <span style={{ color: "#e07b54" }}>{"Guard"}</span>
         </div>
-        <Link
-          href="/"
-          className="text-xs px-3 py-1.5 rounded-lg"
-          style={{ background: "var(--surface)", border: "1px solid var(--border)" }}
-        >
-          ← Back
-        </Link>
-      </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-
-        {/* Call panel */}
-        <Panel title="Call" badge="● LIVE">
-          <div
-            className="rounded-lg flex items-center justify-center h-20 text-xs"
-            style={{ background: "var(--bg)", color: "var(--muted)" }}
-          >
-            {/* Waveform placeholder */}
-            <span>▂▄▆▄▂▅▇▅▂▄▆▄▂</span>
+        <div style={{ display: "flex", alignItems: "center", gap: 16, fontSize: 13 }}>
+          <div>
+            <div style={{ fontWeight: 600, fontSize: 15, color: "#3a2a1e" }}>{"Maria Garcia"}</div>
+            <div style={{ display: "flex", gap: 6, marginTop: 4 }}>
+              <span style={{ background: "#f5ede6", border: "1px solid #e8d5c4", borderRadius: 20, padding: "3px 10px", fontSize: 11, color: "#a08070", fontFamily: "monospace" }}>{"MRN 847291"}</span>
+              <span style={{ background: "#f5ede6", border: "1px solid #e8d5c4", borderRadius: 20, padding: "3px 10px", fontSize: 11, color: "#a08070", fontFamily: "monospace" }}>{"Post-cholecystectomy"}</span>
+              <span style={{ background: "#5aab8a18", border: "1px solid #5aab8a40", borderRadius: 20, padding: "3px 10px", fontSize: 11, color: "#5aab8a", fontFamily: "monospace" }}>{"ES"}</span>
+            </div>
           </div>
-          <p className="text-xs mt-3 leading-relaxed" style={{ color: "var(--muted)" }}>
-            &ldquo;Sí, entiendo que debo tomar la Metformina dos veces al día con las comidas...&rdquo;
-          </p>
-        </Panel>
+        </div>
 
-        {/* Comprehension checklist */}
-        <Panel title="Comprehension Checklist">
-          <ul className="flex flex-col gap-2">
-            {meds.map((m) => (
-              <li key={m.name} className="flex items-start gap-3">
-                <span
-                  className="mt-0.5 w-2.5 h-2.5 rounded-full flex-shrink-0"
-                  style={{ background: statusColor[m.status] }}
-                />
-                <div>
-                  <span className="block text-xs font-medium">{m.name}</span>
-                  <span className="block text-xs" style={{ color: "var(--muted)" }}>{m.note}</span>
-                </div>
-              </li>
-            ))}
-          </ul>
-        </Panel>
+        <div style={{ display: "flex", alignItems: "center", gap: 16 }}>
+          {phase === "running" && (
+            <div style={{ display: "flex", alignItems: "center", gap: 6, fontSize: 12, fontWeight: 600, color: "#5aab8a", fontFamily: "monospace" }}>
+              <div style={{ width: 8, height: 8, background: "#5aab8a", borderRadius: "50%", animation: "pulse 1.2s ease-in-out infinite" }} />
+              {"CALL LIVE · "}{callTime}
+            </div>
+          )}
+          {phase === "done" && (
+            <div style={{ fontSize: 12, fontWeight: 600, color: "#5aab8a", fontFamily: "monospace" }}>{"✓ CALL COMPLETE · 1:05"}</div>
+          )}
+          {phase === "idle" && (
+            <div style={{ fontSize: 12, color: "#c4a88a", fontFamily: "monospace" }}>{"● STANDBY"}</div>
+          )}
+          <Link href="/" style={{ fontSize: 12, padding: "6px 14px", borderRadius: 8, background: "#f5ede6", border: "1px solid #e8d5c4", color: "#7a6050", textDecoration: "none" }}>
+            {"← Back"}
+          </Link>
+        </div>
+      </header>
 
-        {/* Agent activity */}
-        <Panel title="Agent Activity">
-          <ul className="flex flex-col gap-2">
-            {agentEvents.map((e, i) => (
-              <li key={i} className="flex gap-2 text-xs">
-                <span style={{ color: "var(--blue)", flexShrink: 0 }}>{e.agent}</span>
-                <span style={{ color: "var(--muted)" }}>{e.msg}</span>
-              </li>
-            ))}
-          </ul>
-        </Panel>
+      <div style={{
+        flex: 1,
+        display: "grid",
+        gridTemplateColumns: "1fr 1fr 320px",
+        gridTemplateRows: "1fr 1fr",
+        height: "calc(100vh - 62px)",
+      }}>
+        <div style={{ borderRight: "1px solid #e8d5c4", borderBottom: "1px solid #e8d5c4", padding: 20, overflow: "hidden", position: "relative" }}>
+          <CallPanel phase={phase} subtitle={subtitle} items={items} alerts={alerts} callTime={callTime} onStart={startDemo} />
+        </div>
 
-        {/* Alerts */}
-        <Panel title="Alerts">
-          <div
-            className="rounded-lg p-3 text-xs"
-            style={{ background: "#ef44441a", border: "1px solid #ef444440" }}
-          >
-            <p className="font-semibold" style={{ color: "var(--red)" }}>
-              ⚠ Escalation triggered
-            </p>
-            <p className="mt-1" style={{ color: "var(--muted)" }}>
-              Patient did not demonstrate understanding of Warfarin INR monitoring.
-              Nurse review recommended before discharge.
-            </p>
-          </div>
-        </Panel>
+        <div style={{ gridColumn: 2, gridRow: "1 / 3", borderRight: "1px solid #e8d5c4", padding: 20, overflow: "hidden" }}>
+          <ChecklistPanel items={items} comprehension={comprehension} />
+        </div>
 
+        <div style={{ gridColumn: 3, gridRow: 1, borderBottom: "1px solid #e8d5c4", padding: 20, overflow: "hidden" }}>
+          <AgentGraph particles={particles} a2aMsgs={a2aMsgs} />
+        </div>
+
+        <div style={{ gridColumn: 1, gridRow: 2, borderRight: "1px solid #e8d5c4", padding: 20, overflow: "hidden" }}>
+          <SummaryCard phase={phase} items={items} callTime={callTime} alerts={alerts} />
+        </div>
+
+        <div style={{ gridColumn: 3, gridRow: 2, padding: 20, overflow: "hidden" }}>
+          <AlertPanel alerts={alerts} phase={phase} onReset={resetDemo} />
+        </div>
       </div>
-    </main>
-  );
-}
 
-function Panel({ title, badge, children }: { title: string; badge?: string; children: React.ReactNode }) {
-  return (
-    <div
-      className="rounded-xl p-4 flex flex-col gap-3"
-      style={{ background: "var(--surface)", border: "1px solid var(--border)" }}
-    >
-      <div className="flex items-center justify-between">
-        <span className="text-xs font-semibold uppercase tracking-wider" style={{ color: "var(--muted)" }}>
-          {title}
-        </span>
-        {badge && (
-          <span className="text-xs font-medium" style={{ color: "var(--red)" }}>{badge}</span>
-        )}
-      </div>
-      {children}
+      <style>{`
+        @import url('https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&display=swap');
+        @keyframes pulse { 0%,100%{opacity:1;transform:scale(1)} 50%{opacity:.4;transform:scale(.7)} }
+      `}</style>
     </div>
   );
 }
