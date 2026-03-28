@@ -48,4 +48,11 @@ yarn-error.log*
 
 # ── Demo audio (large binaries, generate locally) ─────────────
 demo/audio/*.mp3
+
+# ── Large files / build artifacts ─────────────────────────────
+*.zip
+dashboard.zip
+
+# ── Kiro / Claude internal worktrees ──────────────────────────
+.claude/
 .env.example
