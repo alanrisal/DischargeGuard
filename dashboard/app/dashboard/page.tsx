@@ -1,7 +1,6 @@
 "use client";
 import { useCallStream } from "@/lib/useCallStream";
-import CallPanel from "@/components/CallPanel";
-import ChecklistPanel from "@/components/ChecklistPanel";
+import VoiceAgentPanel from "@/components/VoiceAgentPanel";
 import AgentGraph from "@/components/AgentGraph";
 import AlertPanel from "@/components/AlertPanel";
 import PatientHistory from "@/components/PatientHistory";
@@ -24,9 +23,8 @@ const B = {
 
 export default function DashboardPage() {
   const {
-    phase, items, subtitle, alerts, a2aMsgs, particles,
-    callTime, comprehension,
-    startDemo, resetDemo,
+    phase, items, alerts, a2aMsgs, particles,
+    callTime, resetDemo,
   } = useCallStream();
 
   const greenCount = Object.values(items).filter((v) => v.status === "green").length;
@@ -130,9 +128,7 @@ export default function DashboardPage() {
           display: "flex", flexDirection: "column", gap: 18,
           borderRight: `1px solid ${B.border}`,
         }}>
-          <CallPanel phase={phase} subtitle={subtitle} onStart={startDemo} />
-          <div style={{ height: 1, background: B.border, flexShrink: 0 }} />
-          <ChecklistPanel items={items} comprehension={comprehension} />
+          <VoiceAgentPanel />
         </div>
 
         {/* RIGHT: Agent graph + alerts */}
