@@ -1,0 +1,79 @@
+{
+  "hospital": {
+    "name": "Riverside General Hospital"
+  },
+  "patient": {
+    "first_name": "Maria",
+    "language": "Spanish",
+    "discharge_date": "2026-03-28",
+    "diagnosis": "Type 2 Diabetes with hypertension",
+    "procedure": "Laparoscopic cholecystectomy (gallbladder removal)",
+    "primary_provider": "Dr. Sandra Patel"
+  },
+  "medications": [
+    {
+      "name": "Metformin",
+      "dose": "500mg",
+      "frequency": "twice a day, with breakfast and dinner",
+      "purpose": "helps control your blood sugar levels",
+      "special_instructions": "take with food to avoid an upset stomach"
+    },
+    {
+      "name": "Lisinopril",
+      "dose": "10mg",
+      "frequency": "once every morning",
+      "purpose": "keeps your blood pressure at a safe level",
+      "special_instructions": "avoid potassium supplements while taking this"
+    },
+    {
+      "name": "Warfarin",
+      "dose": "5mg",
+      "frequency": "once every evening at the same time",
+      "purpose": "prevents blood clots from forming after your surgery",
+      "special_instructions": "do not take with ibuprofen or aspirin; you will need a blood test (INR) in 5 days"
+    },
+    {
+      "name": "Omeprazole",
+      "dose": "20mg",
+      "frequency": "once in the morning, 30 minutes before eating",
+      "purpose": "protects your stomach lining while you recover",
+      "special_instructions": null
+    }
+  ],
+  "activity_restrictions": [
+    "no lifting anything heavier than 10 pounds for 4 weeks",
+    "no driving for at least 2 weeks or while taking prescription pain medication",
+    "short walks around the house are encouraged starting the day after discharge",
+    "no swimming or submerging the incision site until cleared by your doctor",
+    "return to normal activity gradually — stop if you feel pain or dizziness"
+  ],
+  "wound_care": [
+    "keep the incision sites clean and dry for the first 48 hours",
+    "after 48 hours, gently wash with mild soap and water, then pat dry",
+    "cover with a clean bandage daily until the skin is fully closed",
+    "do not apply creams, lotions, or ointments unless instructed by Dr. Patel",
+    "steri-strips (small white tape strips) will fall off on their own — do not pull them"
+  ],
+  "follow_ups": [
+    {
+      "date": "April 4, 2026",
+      "time": "10:00 AM",
+      "provider": "Dr. Sandra Patel",
+      "purpose": "post-surgery wound check and medication review"
+    },
+    {
+      "date": "April 2, 2026",
+      "time": "8:30 AM",
+      "provider": "Riverside Lab Services",
+      "purpose": "INR blood test to check Warfarin levels"
+    }
+  ],
+  "warning_signs": [
+    "fever above 101°F (38.3°C)",
+    "redness, swelling, or discharge from the incision site",
+    "severe abdominal pain that is not relieved by your pain medication",
+    "yellowing of the skin or eyes (jaundice)",
+    "unusual bruising or bleeding that does not stop",
+    "shortness of breath or chest pain — call 911 immediately"
+  ]
+}

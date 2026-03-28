@@ -48,3 +48,4 @@ yarn-error.log*
 
 # ── Demo audio (large binaries, generate locally) ─────────────
 demo/audio/*.mp3
+.env.example
