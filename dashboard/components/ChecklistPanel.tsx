@@ -1,6 +1,5 @@
 "use client";
-import { CHECKLIST } from "@/lib/demoData";
-import type { ItemState } from "@/lib/types";
+import type { ChecklistItem, ItemState } from "@/lib/types";
 
 const STATUS_COLOR: Record<string, string> = {
   green:  "#16a34a",
@@ -24,9 +23,9 @@ function getIcon(s: string) {
   return "○";
 }
 
-interface Props { items: Record<string, ItemState>; comprehension: number; }
+interface Props { checklist: ChecklistItem[]; items: Record<string, ItemState>; comprehension: number; }
 
-export default function ChecklistPanel({ items, comprehension }: Props) {
+export default function ChecklistPanel({ checklist, items, comprehension }: Props) {
   const r = 18;
   const circ = 2 * Math.PI * r;
   const ringColor = comprehension > 80 ? "#16a34a" : comprehension > 50 ? "#d97706" : "#dc2626";
@@ -61,8 +60,8 @@ export default function ChecklistPanel({ items, comprehension }: Props) {
       </div>
 
       <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 8 }}>
-        {CHECKLIST.map((item) => {
-          const st = items[item.id];
+        {checklist.map((item) => {
+          const st = items[item.id] ?? { status: "idle", score: "", fill: 0, note: "" };
           const color = STATUS_COLOR[st.status];
           return (
             <div key={item.id} style={{
