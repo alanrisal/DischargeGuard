@@ -86,7 +86,7 @@ export async function POST(req: NextRequest) {
 
     const html = `
 <div style="font-family:system-ui,sans-serif;max-width:620px;margin:0 auto;background:#f8faff;padding:24px;border-radius:12px">
-  <h2 style="margin:0 0 4px;color:#1a2340">🏥 DischargeGuard — Call Summary</h2>
+  <h2 style="margin:0 0 4px;color:#1a2340">🏥 CareCall — Call Summary</h2>
   <p style="margin:0 0 20px;font-size:12px;color:#6b7a9e">Post-discharge follow-up report</p>
 
   <!-- Patient -->
@@ -142,12 +142,12 @@ export async function POST(req: NextRequest) {
   </div>` : ""}
 
   <p style="font-size:10px;color:#c7d2e8;text-align:center;margin-top:20px">
-    DischargeGuard · AI-powered post-discharge follow-up · Google ADK + ElevenLabs
+    CareCall · AI-powered post-discharge follow-up · Google ADK + ElevenLabs
   </p>
 </div>`;
 
     await transporter.sendMail({
-      from: `"DischargeGuard" <${process.env.GMAIL_USER?.trim()}>`,
+      from: `"CareCall" <${process.env.GMAIL_USER?.trim()}>`,
       to: process.env.DEMO_RECIPIENT_EMAIL?.trim(),
       subject: `📋 Call Summary — ${patientName} · ${comprehension}% comprehension`,
       html,
