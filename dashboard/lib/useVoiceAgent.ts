@@ -85,6 +85,12 @@ export function useVoiceAgent() {
     }
   );
 
+  // No-op handler for any checklist tool the agent may call
+  useConversationClientTool(
+    "update_checklist_item",
+    (_params: Record<string, unknown>): string => "ok"
+  );
+
   // ── Core conversation hook ──────────────────────────────────────────────────
 
   const conversation = useConversation({
@@ -165,7 +171,7 @@ export function useVoiceAgent() {
   }, [conversation]);
 
   return {
-    status:         conversation.status,     // "connected" | "connecting" | "disconnected"
+    status:         conversation.status,
     isSpeaking:     conversation.isSpeaking,
     transcript,
     currentStep,

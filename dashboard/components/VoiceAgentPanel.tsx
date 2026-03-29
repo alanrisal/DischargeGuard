@@ -14,7 +14,11 @@ const C = {
 };
 
 // ── Inner panel (must live inside ConversationProvider) ───────────────────────
-function VoiceAgentInner() {
+function VoiceAgentInner({ onCallStart, onCallEnd, onStepUpdate }: {
+  onCallStart?: () => void;
+  onCallEnd?: (data: { completedSteps: string[]; flaggedWarnings: { sign: string; severity: string }[]; transcript: string }) => void;
+  onStepUpdate?: (steps: number, warnings: number) => void;
+}) {
   const {
     status, isSpeaking,
     transcript, currentStep, completedSteps, flaggedWarnings,
@@ -22,12 +26,33 @@ function VoiceAgentInner() {
   } = useVoiceAgent();
 
   const transcriptRef = useRef<HTMLDivElement>(null);
+  const firedRef      = useRef(false);
 
   useEffect(() => {
     if (transcriptRef.current) {
       transcriptRef.current.scrollTop = transcriptRef.current.scrollHeight;
     }
   }, [transcript]);
+
+  // Fire onCallEnd when ElevenLabs disconnects naturally (call ends on agent side)
+  useEffect(() => {
+    if (status === "disconnected" && !firedRef.current) {
+      firedRef.current = true;
+      onCallEnd?.({
+        completedSteps: completedSteps as unknown as string[],
+        flaggedWarnings,
+        transcript: transcript.map((e) => `${e.role === "agent" ? "ALEX" : "PT"}: ${e.text}`).join("\n"),
+      });
+    }
+    if (status === "connected") {
+      firedRef.current = false; // reset for next call
+    }
+  }, [status]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  // Notify parent of live metric updates
+  useEffect(() => {
+    onStepUpdate?.(completedSteps.length, flaggedWarnings.length);
+  }, [completedSteps.length, flaggedWarnings.length, onStepUpdate]);
 
   const connected  = status === "connected";
   const connecting = status === "connecting";
@@ -45,7 +70,14 @@ function VoiceAgentInner() {
           <StatusDot status={status} isSpeaking={isSpeaking} />
         </div>
         <button
-          onClick={connected ? endCall : startCall}
+          onClick={connected ? () => {
+            endCall();
+            onCallEnd?.({
+              completedSteps: completedSteps as unknown as string[],
+              flaggedWarnings,
+              transcript: transcript.map((e) => `${e.role === "agent" ? "ALEX" : "PT"}: ${e.text}`).join("\n"),
+            });
+          } : () => { startCall(); onCallStart?.(); }}
           disabled={connecting}
           style={{
             padding: "6px 16px", borderRadius: 8, border: "none",
@@ -224,10 +256,14 @@ function StatusDot({ status, isSpeaking }: { status: string; isSpeaking: boolean
 }
 
 // ── Public export: wraps inner with required ConversationProvider ─────────────
-export default function VoiceAgentPanel() {
+export default function VoiceAgentPanel({ onCallStart, onCallEnd, onStepUpdate }: {
+  onCallStart?: () => void;
+  onCallEnd?: (data: { completedSteps: string[]; flaggedWarnings: { sign: string; severity: string }[]; transcript: string }) => void;
+  onStepUpdate?: (steps: number, warnings: number) => void;
+}) {
   return (
     <ConversationProvider>
-      <VoiceAgentInner />
+      <VoiceAgentInner onCallStart={onCallStart} onCallEnd={onCallEnd} onStepUpdate={onStepUpdate} />
     </ConversationProvider>
   );
 }
