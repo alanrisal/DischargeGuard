@@ -13,13 +13,14 @@ export async function POST(req: NextRequest) {
 
     console.log('[Webhook] flag_warning_sign:', body);
 
-    // Get existing warnings first
-    const existing = await redis.hget<string>(
-      `session:${conversation_id}`,
-      'flaggedWarnings'
-    );
-
-    const warnings = existing ? JSON.parse(existing) : [];
+    // Upstash may return the value already parsed (array) or as a raw string
+    const existingRaw = await redis.hget(`session:${conversation_id}`, 'flaggedWarnings');
+    const warnings: unknown[] =
+      existingRaw == null
+        ? []
+        : typeof existingRaw === 'string'
+        ? JSON.parse(existingRaw)
+        : (existingRaw as unknown[]);
     warnings.push({ sign, severity, flaggedAt: Date.now() });
 
     await redis.hset(`session:${conversation_id}`, {

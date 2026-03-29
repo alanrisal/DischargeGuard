@@ -13,9 +13,14 @@ export async function POST(req: NextRequest) {
 
     console.log('[Webhook] update_checklist_item:', body);
 
-    // Get existing checklist state first (stored as JSON string)
-    const existingStr = await redis.hget<string>(`session:${conversation_id}`, 'itemStates');
-    const itemStates: Record<string, unknown> = existingStr ? JSON.parse(existingStr) : {};
+    // Upstash may return the value already parsed (object) or as a raw string
+    const existingRaw = await redis.hget(`session:${conversation_id}`, 'itemStates');
+    const itemStates: Record<string, unknown> =
+      existingRaw == null
+        ? {}
+        : typeof existingRaw === 'string'
+        ? JSON.parse(existingRaw)
+        : (existingRaw as Record<string, unknown>);
     itemStates[item_id] = { status, note, updatedAt: Date.now() };
 
     await redis.hset(`session:${conversation_id}`, {
