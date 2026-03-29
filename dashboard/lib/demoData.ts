@@ -100,6 +100,7 @@ export const GRAPH_EDGES: [string, string][] = [
 
 // ── Patient history demo data (will be replaced by Google ADK + ElevenLabs API) ──
 
+// ── Maria Garcia ──────────────────────────────────────────────────────────────
 export const PATIENT_PRESCRIPTIONS = [
   { name: "Metformin 500mg",      prescribed: "Jan 12, 2026", by: "Dr. Chen",     status: "active",      refills: 3, purpose: "Type 2 Diabetes" },
   { name: "Lisinopril 10mg",      prescribed: "Nov 4, 2025",  by: "Dr. Chen",     status: "active",      refills: 5, purpose: "Hypertension" },
@@ -167,5 +168,94 @@ export const PATIENT_CALL_HISTORY = [
     comprehension: 0,
     flags: [],
     summary: "No answer. Voicemail left. Retry scheduled.",
+  },
+];
+
+// ── Wei Chen ──────────────────────────────────────────────────────────────────
+export const WEI_PRESCRIPTIONS = [
+  { name: "Aspirin 81mg",        prescribed: "Mar 28, 2026", by: "Dr. Patel",   status: "new",    refills: 11, purpose: "Anti-platelet — stent protection" },
+  { name: "Clopidogrel 75mg",    prescribed: "Mar 28, 2026", by: "Dr. Patel",   status: "new",    refills: 5,  purpose: "Prevent stent clotting" },
+  { name: "Metoprolol 25mg",     prescribed: "Mar 28, 2026", by: "Dr. Patel",   status: "new",    refills: 3,  purpose: "Heart rate control" },
+  { name: "Atorvastatin 40mg",   prescribed: "Mar 28, 2026", by: "Dr. Patel",   status: "new",    refills: 6,  purpose: "Cholesterol management" },
+  { name: "Lisinopril 10mg",     prescribed: "Jan 5, 2026",  by: "Dr. Patel",   status: "active", refills: 4,  purpose: "Hypertension" },
+];
+
+export const WEI_VISITS = [
+  { date: "Mar 28, 2026", type: "Discharge",      provider: "Dr. Patel",    dept: "Cardiology",  note: "Post-PCI discharge. Hemostasis confirmed. Stable." },
+  { date: "Mar 26, 2026", type: "Procedure",       provider: "Dr. Patel",    dept: "Cardiology",  note: "Percutaneous coronary intervention — stent placed in LAD." },
+  { date: "Mar 25, 2026", type: "Admission",       provider: "Dr. Patel",    dept: "Cardiology",  note: "Chest pain with EKG changes. Admitted for cardiac catheterization." },
+  { date: "Jan 5, 2026",  type: "Follow-up",       provider: "Dr. Patel",    dept: "Cardiology",  note: "Atrial fibrillation management review. Rate controlled." },
+  { date: "Oct 12, 2025", type: "Annual Physical", provider: "Dr. Patel",    dept: "Cardiology",  note: "BP 148/92. Statin therapy initiated." },
+];
+
+export const WEI_CALL_HISTORY = [
+  {
+    date: "Mar 28, 2026",
+    time: "3:00 PM",
+    duration: "5:14",
+    type: "Post-discharge",
+    status: "completed",
+    agent: "ElevenLabs VoiceCoach",
+    language: "ZH",
+    comprehension: 82,
+    flags: ["Persistent headache flagged", "Nurse callback scheduled"],
+    summary: "Patient understood 7/9 discharge items. Reported persistent headache — escalated to care team. Nurse callback scheduled within 1 hour.",
+  },
+  {
+    date: "Jan 7, 2026",
+    time: "10:00 AM",
+    duration: "0:52",
+    type: "Medication check-in",
+    status: "completed",
+    agent: "ElevenLabs VoiceCoach",
+    language: "ZH",
+    comprehension: 88,
+    flags: [],
+    summary: "Patient confirmed taking all cardiac medications. No chest pain or unusual symptoms reported.",
+  },
+];
+
+// ── James Wilson ──────────────────────────────────────────────────────────────
+export const JAMES_PRESCRIPTIONS = [
+  { name: "Oxycodone 5mg",       prescribed: "Mar 28, 2026", by: "Dr. Nguyen", status: "new",          refills: 0,  purpose: "Post-op pain management" },
+  { name: "Celecoxib 200mg",     prescribed: "Mar 28, 2026", by: "Dr. Nguyen", status: "new",          refills: 1,  purpose: "Inflammation control" },
+  { name: "Warfarin 5mg",        prescribed: "Mar 28, 2026", by: "Dr. Nguyen", status: "new",          refills: 2,  purpose: "DVT prevention post-surgery" },
+  { name: "Salbutamol Inhaler",  prescribed: "Jun 10, 2024", by: "Dr. Morris", status: "active",       refills: 5,  purpose: "COPD rescue inhaler" },
+  { name: "Metformin 1000mg",    prescribed: "Apr 2, 2023",  by: "Dr. Morris", status: "active",       refills: 3,  purpose: "Type 2 Diabetes" },
+  { name: "Tiotropium Inhaler",  prescribed: "Jun 10, 2024", by: "Dr. Morris", status: "active",       refills: 2,  purpose: "COPD maintenance" },
+];
+
+export const JAMES_VISITS = [
+  { date: "Mar 28, 2026", type: "Discharge",         provider: "Dr. Nguyen", dept: "Orthopedics",  note: "Total hip arthroplasty — uncomplicated. Discharged with walker." },
+  { date: "Mar 26, 2026", type: "Surgery",            provider: "Dr. Nguyen", dept: "Orthopedics",  note: "Right total hip replacement. Estimated blood loss 350ml. Good ROM." },
+  { date: "Mar 25, 2026", type: "Pre-op",             provider: "Dr. Nguyen", dept: "Orthopedics",  note: "Pre-surgical assessment. Cleared for surgery. COPD stable." },
+  { date: "Feb 4, 2026",  type: "Follow-up",          provider: "Dr. Morris", dept: "Primary Care", note: "HbA1c 7.8 — slightly elevated. Metformin dose increased." },
+  { date: "Jun 10, 2024", type: "Pulmonology Consult",provider: "Dr. Morris", dept: "Pulmonology",  note: "COPD moderate severity. Inhaler regimen established." },
+];
+
+export const JAMES_CALL_HISTORY = [
+  {
+    date: "Mar 28, 2026",
+    time: "4:30 PM",
+    duration: "6:02",
+    type: "Post-discharge",
+    status: "completed",
+    agent: "ElevenLabs VoiceCoach",
+    language: "EN",
+    comprehension: 74,
+    flags: ["Pain level 7/10 reported", "Nurse callback scheduled"],
+    summary: "Patient reported pain level 7/10 at rest. Clarified Warfarin monitoring schedule. Nurse callback arranged. Physical therapy exercises reviewed.",
+  },
+  {
+    date: "Feb 5, 2026",
+    time: "11:15 AM",
+    duration: "1:10",
+    type: "Medication check-in",
+    status: "completed",
+    agent: "ElevenLabs VoiceCoach",
+    language: "EN",
+    comprehension: 91,
+    flags: [],
+    summary: "Patient confirmed taking all medications. Reported improved energy levels. No concerns raised.",
   },
 ];

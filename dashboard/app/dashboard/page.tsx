@@ -7,6 +7,7 @@ import AgentGraph from "@/components/AgentGraph";
 import AlertPanel from "@/components/AlertPanel";
 import PatientHistory from "@/components/PatientHistory";
 import Link from "next/link";
+import { getScenario } from "@/lib/scenarioData";
 
 const B = {
   accent: "#2563eb", surface: "#f8faff", surfaceD: "#f0f4ff",
@@ -18,17 +19,21 @@ type CallStatus = "idle" | "live" | "done";
 
 function DashboardPage() {
   const searchParams = useSearchParams();
-  const scenarioMrn  = searchParams.get("scenario") ?? "847291";
+  const scenarioParam = searchParams.get("scenario") ?? "maria";
+
+  // Scenario fallback data (used when Supabase is unavailable)
+  const scenarioFallback = getScenario(scenarioParam);
 
   const [patient, setPatient] = useState<{ name: string; mrn: string; diagnosis: string; language: string; language_code: string } | null>(null);
 
-  // Fetch patient from Supabase by MRN
+  // Fetch patient from Supabase by MRN; fall back to scenario data silently
   useEffect(() => {
-    fetch(`/api/patient?mrn=${scenarioMrn}`)
+    fetch(`/api/patient?mrn=${scenarioFallback.mrn}`)
       .then((r) => r.json())
       .then((d) => { if (d.patient) setPatient(d.patient); })
-      .catch(() => {}); // silently fall back to hardcoded
-  }, [scenarioMrn]);
+      .catch(() => {});
+  }, [scenarioFallback.mrn]);
+
   const [callStatus, setCallStatus]   = useState<CallStatus>("idle");
   const [callTime, setCallTime]       = useState("0:00");
   const [completedSteps, setCompletedSteps] = useState(0);
@@ -44,7 +49,13 @@ function DashboardPage() {
   const startRef    = useRef<number>(0);
   const sentRef     = useRef(false);
 
-  // Start timer when call goes live
+  // Resolved patient info — Supabase takes priority, falls back to scenario
+  const displayName     = patient?.name            ?? scenarioFallback.name;
+  const displayMrn      = patient?.mrn             ?? scenarioFallback.mrn;
+  const displayDiagnosis= patient?.diagnosis?.split(",")[0] ?? scenarioFallback.diagnosis.split(",")[0];
+  const displayLangCode = patient?.language_code   ?? scenarioFallback.language_code;
+  const displayLang     = patient?.language        ?? scenarioFallback.language;
+
   const handleCallStart = () => {
     sentRef.current = false;
     setCallStatus("live");
@@ -60,7 +71,6 @@ function DashboardPage() {
     }, 500);
   };
 
-  // Called when ElevenLabs session ends
   const handleCallEnd = (data: {
     completedSteps: string[];
     flaggedWarnings: { sign: string; severity: string }[];
@@ -85,9 +95,9 @@ function DashboardPage() {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
-        patientName:     patient?.name ?? "Maria Garcia",
-        patientMrn:      patient?.mrn ?? scenarioMrn,
-        languageCode:    patient?.language_code ?? "es",
+        patientName:     displayName,
+        patientMrn:      displayMrn,
+        languageCode:    displayLangCode,
         callTime:        duration,
         comprehension:   comp,
         greenCount:      data.completedSteps.length,
@@ -103,7 +113,6 @@ function DashboardPage() {
       .catch(console.error);
   };
 
-  // Update live metrics from VoiceAgentPanel
   const handleStepUpdate = (steps: number, warns: number) => {
     setCompletedSteps(steps);
     setWarnings(warns);
@@ -128,13 +137,13 @@ function DashboardPage() {
         <div style={{ width: 1, height: 28, background: B.border }} />
 
         <div>
-          <div style={{ fontWeight: 700, fontSize: 14, color: B.text }}>{patient?.name ?? "Maria Garcia"}</div>
+          <div style={{ fontWeight: 700, fontSize: 14, color: B.text }}>{displayName}</div>
           <div style={{ display: "flex", gap: 5, marginTop: 3 }}>
-            {[`MRN ${patient?.mrn ?? "847291"}`, patient?.diagnosis?.split(",")[0] ?? "Post-cholecystectomy"].map((t) => (
+            {[`MRN ${displayMrn}`, displayDiagnosis].map((t) => (
               <span key={t} style={{ background: B.surfaceD, border: `1px solid ${B.border}`, borderRadius: 20, padding: "1px 8px", fontSize: 9, color: B.muted, fontFamily: "monospace" }}>{t}</span>
             ))}
             <span style={{ background: "#dcfce7", border: "1px solid #86efac", borderRadius: 20, padding: "1px 8px", fontSize: 9, color: "#15803d", fontFamily: "monospace" }}>
-              {patient?.language_code?.toUpperCase() ?? "ES"} · {patient?.language ?? "Spanish"}
+              {displayLangCode.toUpperCase()} · {displayLang}
             </span>
           </div>
         </div>
@@ -174,7 +183,7 @@ function DashboardPage() {
 
         {/* LEFT */}
         <div style={{ width: 280, flexShrink: 0, borderRight: `1px solid ${B.border}`, padding: 16, overflow: "hidden", display: "flex", flexDirection: "column", background: "#fff" }}>
-          <PatientHistory />
+          <PatientHistory scenarioId={scenarioParam} />
         </div>
 
         {/* CENTER */}
@@ -183,8 +192,8 @@ function DashboardPage() {
             onCallStart={handleCallStart}
             onCallEnd={handleCallEnd}
             onStepUpdate={handleStepUpdate}
-            patientName={patient?.name}
-            languageCode={patient?.language_code}
+            patientData={scenarioFallback.voiceData}
+            scenarioId={scenarioParam}
           />
           <div style={{ height: 1, background: B.border, flexShrink: 0 }} />
           {callStatus === "done" && sessionData ? (

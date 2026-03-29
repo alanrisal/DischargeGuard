@@ -4,6 +4,12 @@ import path from "path";
 
 const AGENT_ID = "agent_3001kmtk38tae4m9rhs2thzdvh3r";
 
+const SCENARIO_FILES: Record<string, string> = {
+  maria: "sample_data.json",
+  wei:   "sample_data_wei.json",
+  james: "sample_data_james.json",
+};
+
 type PatientData = {
   hospital: { name: string };
   patient: {
@@ -17,14 +23,15 @@ type PatientData = {
   warning_signs: string[];
 };
 
-function loadPatientData(): PatientData {
-  const filePath = path.join(process.cwd(), "..", "agents", "voice_coach", "sample_data.json");
+function loadPatientData(scenarioId: string): PatientData {
+  const fileName = SCENARIO_FILES[scenarioId] ?? SCENARIO_FILES.maria;
+  const filePath = path.join(process.cwd(), "..", "agents", "voice_coach", fileName);
   return JSON.parse(fs.readFileSync(filePath, "utf-8")) as PatientData;
 }
 
 /** Format dynamic variables exactly as useVoiceAgent.ts does for browser calls. */
-function buildDynamicVariables() {
-  const d = loadPatientData();
+function buildDynamicVariables(scenarioId: string) {
+  const d = loadPatientData(scenarioId);
 
   const medsFormatted = d.medications
     .map((m) =>
@@ -50,7 +57,7 @@ function buildDynamicVariables() {
 }
 
 export async function POST(req: NextRequest) {
-  const { phoneNumber } = await req.json();
+  const { phoneNumber, scenarioId = "maria" } = await req.json();
 
   if (!phoneNumber) {
     return NextResponse.json({ error: "phoneNumber is required" }, { status: 400 });
@@ -70,14 +77,12 @@ export async function POST(req: NextRequest) {
     agent_id: AGENT_ID,
     agent_phone_number_id: phoneNumberId,
     to_number: phoneNumber,
-    // Pass the same patient variables the browser agent uses.
-    // Without this the agent hits unfilled Handlebars placeholders and hangs up.
     conversation_initiation_client_data: {
-      dynamic_variables: buildDynamicVariables(),
+      dynamic_variables: buildDynamicVariables(scenarioId),
     },
   };
 
-  console.log("[outbound-call] Initiating call to", phoneNumber);
+  console.log("[outbound-call] Initiating call to", phoneNumber, "scenario:", scenarioId);
 
   const res = await fetch("https://api.elevenlabs.io/v1/convai/twilio/outbound_call", {
     method: "POST",

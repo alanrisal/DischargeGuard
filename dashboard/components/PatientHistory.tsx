@@ -6,6 +6,7 @@ import { MoreHorizontal, Clock, ChevronRight, Activity, Calendar, Phone } from "
 type Tab = "prescriptions" | "visits" | "calls";
 
 interface Props {
+  scenarioId?: string;
   callTime?: string;
   stepsDone?: number;
   comprehension?: number;
@@ -33,9 +34,9 @@ const BADGE_STYLES: Record<string, { bg: string; color: string }> = {
   discontinued: { bg: "rgba(255,255,255,0.1)", color: "rgba(255,255,255,0.4)" },
 };
 
-export default function PatientHistory({ callTime = "0:00", stepsDone = 0, comprehension = 0, warnings = 0 }: Props) {
+export default function PatientHistory({ scenarioId = "maria", callTime = "0:00", stepsDone = 0, comprehension = 0, warnings = 0 }: Props) {
   const [tab, setTab] = useState<Tab>("prescriptions");
-  const { prescriptions, loading, source } = usePatientData();
+  const { prescriptions, loading, source } = usePatientData(scenarioId);
 
   const rightColRef = useRef<HTMLDivElement>(null);
   const [collapsed, setCollapsed] = useState(false);

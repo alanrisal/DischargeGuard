@@ -1,7 +1,8 @@
 "use client";
 import { useConversation, useConversationClientTool } from "@elevenlabs/react";
 import { useState, useCallback, useRef } from "react";
-import patientData from "../../agents/voice_coach/sample_data.json";
+import type { PatientVoiceData } from "./scenarioData";
+import { SCENARIOS } from "./scenarioData";
 
 // ─── Must be called inside <ConversationProvider> ─────────────────────────────
 
@@ -33,7 +34,10 @@ export type FlaggedWarning = {
   severity: "warning" | "urgent";
 };
 
-export function useVoiceAgent({ patientName, languageCode }: { patientName?: string; languageCode?: string } = {}) {
+export function useVoiceAgent({ patientData }: { patientData?: PatientVoiceData } = {}) {
+  // Fall back to Maria's data if nothing is passed
+  const data = patientData ?? SCENARIOS.maria.voiceData;
+
   const [transcript, setTranscript] = useState<TranscriptEntry[]>([]);
   const [currentStep, setCurrentStep] = useState<WorkflowStepId | null>(null);
   const [completedSteps, setCompletedSteps] = useState<WorkflowStepId[]>([]);
@@ -118,31 +122,28 @@ export function useVoiceAgent({ patientName, languageCode }: { patientName?: str
     setFlaggedWarnings([]);
     stepRef.current = "opening";
 
-    // Pass full structured data from sample_data.json as dynamic variables.
-    // The system prompt uses {{_each_medications}}, {{_each_restrictions}}, etc.
-    // ElevenLabs' Handlebars engine resolves array variables server-side.
     // Pre-format all structured data as strings — the API only accepts
     // string | number | boolean. Arrays cause a server-side error.
-    const medsFormatted = patientData.medications
+    const medsFormatted = data.medications
       .map((m) =>
         `- ${m.name} ${m.dose}: ${m.frequency}. Purpose: ${m.purpose}` +
         (m.special_instructions ? `. Note: ${m.special_instructions}` : "")
       )
       .join("\n");
 
-    const restrictionsFormatted = patientData.activity_restrictions
+    const restrictionsFormatted = data.activity_restrictions
       .map((r) => `- ${r}`)
       .join("\n");
 
-    const woundCareFormatted = patientData.wound_care
+    const woundCareFormatted = data.wound_care
       .map((w) => `- ${w}`)
       .join("\n");
 
-    const followUpsFormatted = patientData.follow_ups
+    const followUpsFormatted = data.follow_ups
       .map((f) => `- ${f.date} at ${f.time} with ${f.provider}: ${f.purpose}`)
       .join("\n");
 
-    const warningSignsFormatted = patientData.warning_signs
+    const warningSignsFormatted = data.warning_signs
       .map((w) => `- ${w}`)
       .join("\n");
 
@@ -150,13 +151,13 @@ export function useVoiceAgent({ patientName, languageCode }: { patientName?: str
       agentId: AGENT_ID,
       connectionType: "websocket",
       dynamicVariables: {
-        patient_first_name: patientName ?? patientData.patient.first_name,
-        hospital_name:      patientData.hospital.name,
-        patient_language:   languageCode ?? patientData.patient.language,
-        discharge_date:     patientData.patient.discharge_date,
-        diagnosis:          patientData.patient.diagnosis,
-        procedure:          patientData.patient.procedure,
-        primary_provider:   patientData.patient.primary_provider.replace(/^Dr\.\s*/i, ""),
+        patient_first_name: data.patient.first_name,
+        hospital_name:      data.hospital.name,
+        patient_language:   data.patient.language,
+        discharge_date:     data.patient.discharge_date,
+        diagnosis:          data.patient.diagnosis,
+        procedure:          data.patient.procedure,
+        primary_provider:   data.patient.primary_provider.replace(/^Dr\.\s*/i, ""),
         medications:        medsFormatted,
         restrictions:       restrictionsFormatted,
         wound_care:         woundCareFormatted,
@@ -164,7 +165,7 @@ export function useVoiceAgent({ patientName, languageCode }: { patientName?: str
         warning_signs:      warningSignsFormatted,
       },
     });
-  }, [conversation]);
+  }, [conversation, data]);
 
   const endCall = useCallback(async () => {
     await conversation.endSession();

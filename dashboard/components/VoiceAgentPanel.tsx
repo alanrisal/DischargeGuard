@@ -3,6 +3,7 @@ import { useEffect, useRef, useState } from "react";
 import { ConversationProvider } from "@elevenlabs/react";
 import { useVoiceAgent, WORKFLOW_STEPS } from "@/lib/useVoiceAgent";
 import type { TranscriptEntry, WorkflowStepId, FlaggedWarning } from "@/lib/useVoiceAgent";
+import type { PatientVoiceData } from "@/lib/scenarioData";
 
 const C = {
   accent: "#2563eb", green: "#16a34a", amber: "#d97706",
@@ -64,11 +65,15 @@ function inferWarningsFromText(text: string): { sign: string; severity: "urgent"
 // ── Inner panel (must live inside ConversationProvider) ───────────────────────
 function VoiceAgentInner({
   phoneNumber,
+  patientData,
+  scenarioId,
   onCallStart,
   onCallEnd,
   onStepUpdate,
 }: {
   phoneNumber: string;
+  patientData?: PatientVoiceData;
+  scenarioId?: string;
   onCallStart?: () => void;
   onCallEnd?: (data: {
     completedSteps: string[];
@@ -76,8 +81,6 @@ function VoiceAgentInner({
     transcript: string;
   }) => void;
   onStepUpdate?: (steps: number, warnings: number) => void;
-  patientName?: string;
-  languageCode?: string;
 }) {
   // ── Browser-WebSocket mode ───────────────────────────────────────────────────
   const {
@@ -87,7 +90,7 @@ function VoiceAgentInner({
     completedSteps: wsCompletedSteps,
     flaggedWarnings: wsFlaggedWarnings,
     startCall: wsStartCall, endCall: wsEndCall,
-  } = useVoiceAgent();
+  } = useVoiceAgent({ patientData });
 
   // ── Phone mode state ─────────────────────────────────────────────────────────
   type PhoneStatus = "idle" | "calling" | "connected" | "done" | "error";
@@ -262,7 +265,7 @@ function VoiceAgentInner({
       const res = await fetch("/api/outbound-call", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ phoneNumber: phoneNumber.trim() }),
+        body: JSON.stringify({ phoneNumber: phoneNumber.trim(), scenarioId: scenarioId ?? "maria" }),
       });
       const data = await res.json();
       if (!res.ok) throw new Error(data.error ?? "Failed to start call");
@@ -519,13 +522,13 @@ function StatusDot({ status, isSpeaking }: { status: string; isSpeaking: boolean
 
 // ── Public export ─────────────────────────────────────────────────────────────
 export default function VoiceAgentPanel({
-  onCallStart, onCallEnd, onStepUpdate,
+  onCallStart, onCallEnd, onStepUpdate, patientData, scenarioId,
 }: {
   onCallStart?: () => void;
   onCallEnd?: (data: { completedSteps: string[]; flaggedWarnings: { sign: string; severity: string }[]; transcript: string }) => void;
   onStepUpdate?: (steps: number, warnings: number) => void;
-  patientName?: string;
-  languageCode?: string;
+  patientData?: PatientVoiceData;
+  scenarioId?: string;
 }) {
   const [phoneNumber, setPhoneNumber] = useState("");
 
@@ -544,7 +547,14 @@ export default function VoiceAgentPanel({
           style={{ padding: "7px 10px", borderRadius: 8, border: "1px solid #dde3f5", fontSize: 12, fontFamily: "monospace", color: "#1a2340", background: "#fff", outline: "none", width: "100%", boxSizing: "border-box" }}
         />
       </div>
-      <VoiceAgentInner phoneNumber={phoneNumber} onCallStart={onCallStart} onCallEnd={onCallEnd} onStepUpdate={onStepUpdate} />
+      <VoiceAgentInner
+        phoneNumber={phoneNumber}
+        patientData={patientData}
+        scenarioId={scenarioId}
+        onCallStart={onCallStart}
+        onCallEnd={onCallEnd}
+        onStepUpdate={onStepUpdate}
+      />
     </ConversationProvider>
   );
 }

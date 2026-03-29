@@ -1,0 +1,86 @@
+{
+  "hospital": {
+    "name": "Riverside General Hospital"
+  },
+  "patient": {
+    "first_name": "James",
+    "language": "English",
+    "discharge_date": "2026-03-28",
+    "diagnosis": "Post-total hip replacement, COPD, Type 2 Diabetes",
+    "procedure": "Total right hip replacement (total hip arthroplasty)",
+    "primary_provider": "Dr. Kevin Nguyen"
+  },
+  "medications": [
+    {
+      "name": "Oxycodone",
+      "dose": "5mg",
+      "frequency": "every 4 to 6 hours as needed for pain",
+      "purpose": "manages moderate to severe pain after your hip surgery",
+      "special_instructions": "do not drive or operate machinery while taking this; take with food to avoid nausea"
+    },
+    {
+      "name": "Celecoxib",
+      "dose": "200mg",
+      "frequency": "twice daily with food",
+      "purpose": "reduces inflammation and helps with pain as the oxycodone is tapered off",
+      "special_instructions": "take with a full glass of water and food"
+    },
+    {
+      "name": "Warfarin",
+      "dose": "5mg",
+      "frequency": "once daily at the same time each evening",
+      "purpose": "prevents dangerous blood clots in your leg after hip surgery",
+      "special_instructions": "you will need an INR blood test on April 1st to check your Warfarin levels; avoid aspirin and ibuprofen"
+    },
+    {
+      "name": "Salbutamol Inhaler",
+      "dose": "2 puffs",
+      "frequency": "as needed when you feel short of breath or wheezy",
+      "purpose": "opens up your airways quickly to relieve COPD symptoms",
+      "special_instructions": "keep it with you at all times; shake before each use"
+    },
+    {
+      "name": "Metformin",
+      "dose": "1000mg",
+      "frequency": "twice daily with breakfast and dinner",
+      "purpose": "controls your blood sugar levels for diabetes",
+      "special_instructions": "take with food; your blood sugar may fluctuate more during recovery — monitor closely"
+    }
+  ],
+  "activity_restrictions": [
+    "use your walker at all times for the first 4 weeks — no weight-bearing without it",
+    "do not bend your hip more than 90 degrees — avoid low chairs and reaching for your feet",
+    "no driving until cleared by Dr. Nguyen (typically 6 weeks)",
+    "do your daily physical therapy exercises as shown by your therapist",
+    "do not cross your legs or ankles when sitting or lying down"
+  ],
+  "wound_care": [
+    "keep the hip incision clean and dry",
+    "change the wound dressing every 2 days or when wet or soiled",
+    "gently pat dry after showering — do not scrub the incision",
+    "steri-strips or staples will be removed at your follow-up appointment",
+    "watch for signs of infection: increasing redness, warmth, or discharge from the wound"
+  ],
+  "follow_ups": [
+    {
+      "date": "April 4, 2026",
+      "time": "11:00 AM",
+      "provider": "Dr. Kevin Nguyen",
+      "purpose": "post-surgery wound check, staple removal, and mobility assessment"
+    },
+    {
+      "date": "April 1, 2026",
+      "time": "8:00 AM",
+      "provider": "Riverside Lab Services",
+      "purpose": "INR blood test to check Warfarin level for clot prevention"
+    }
+  ],
+  "warning_signs": [
+    "calf pain, swelling, or redness in the leg — possible blood clot, go to ER immediately",
+    "sudden shortness of breath or chest pain — call 911 immediately",
+    "fever above 101°F (38.3°C)",
+    "increasing pain, redness, warmth, or discharge from the surgical wound",
+    "sudden severe hip pain with leg appearing shorter or turned — possible dislocation, call 911",
+    "blood sugar below 70 mg/dL (shakiness, sweating, confusion) or above 300 mg/dL"
+  ]
+}
