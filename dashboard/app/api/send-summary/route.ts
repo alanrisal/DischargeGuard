@@ -178,9 +178,11 @@ export async function POST(req: NextRequest) {
             comprehension_score: comprehension,
             flags:               (flaggedWarnings as { sign: string }[]).map((w) => w.sign),
             summary:             (completedSteps as string[]).includes("medications")
-              ? "Medications reviewed. " : "Medications not completed. " +
-                (flaggedWarnings as { sign: string }[]).length > 0
-              ? `${(flaggedWarnings as { sign: string }[]).length} concern(s) flagged.` : "No concerns flagged.",
+              ? "Medications reviewed. "
+              : ("Medications not completed. " +
+                ((flaggedWarnings as { sign: string }[]).length > 0
+                  ? `${(flaggedWarnings as { sign: string }[]).length} concern(s) flagged.`
+                  : "No concerns flagged.")),
             elevenlabs_conversation_id: body.conversationId ?? null,
           });
         }
