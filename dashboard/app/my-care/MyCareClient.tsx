@@ -269,7 +269,7 @@ export default function MyCareClient({ initialScenarioId, patientPortal = false 
                 {callLive ? "Live" : displayTranscript.length > 0 ? "Last session" : "No transcript yet"}
               </div>
               <div style={{ flex: 1, minHeight: 360, display: "flex", flexDirection: "column" }}>
-                <ComprehensionTranscript transcript={displayTranscript} isConnected={callLive} isPhoneMode={false} callTimeLabel={null} />
+                <ComprehensionTranscript transcript={displayTranscript} isConnected={callLive} isPhoneMode={false} />
               </div>
             </div>
           )}
