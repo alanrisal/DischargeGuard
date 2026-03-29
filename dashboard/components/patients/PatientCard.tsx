@@ -30,6 +30,15 @@ export default function PatientCard({
   id, name, lang, langCode, note, initials, status, voiceScenario, animDelay = 0,
 }: Props) {
   const [hovered, setHovered] = useState(false);
+  const [imgError, setImgError] = useState(false);
+  const [ext, setExt] = useState<"jpg" | "png">("jpg");
+
+  const handleImgError = () => {
+    if (ext === "jpg") setExt("png");
+    else setImgError(true);
+  };
+
+  const photoSrc = `${process.env.NEXT_PUBLIC_SUPABASE_URL}/storage/v1/object/public/patient-photos/${id}.${ext}`;
 
   const href = voiceScenario && voiceScenario !== id
     ? `/dashboard?scenario=${voiceScenario}&mrn=${id}`
@@ -62,24 +71,31 @@ export default function PatientCard({
         {/* Top row: avatar + status */}
         <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between" }}>
 
-          {/* Avatar inset circle */}
+          {/* Avatar — photo or initials fallback */}
           <div style={{
             width: 52, height: 52,
             borderRadius: "50%",
             background: "var(--surface-inset)",
             boxShadow: "inset 3px 3px 7px var(--shadow-dark), inset -3px -3px 7px var(--shadow-light)",
             display: "flex", alignItems: "center", justifyContent: "center",
-            flexShrink: 0,
+            flexShrink: 0, overflow: "hidden",
           }}>
-            <span style={{
-              fontFamily: "var(--font-display)",
-              fontWeight: 600,
-              fontSize: 17,
-              color: avatarColor,
-              letterSpacing: "-0.5px",
-            }}>
-              {initials}
-            </span>
+            {!imgError ? (
+              <img
+                src={photoSrc}
+                alt={name}
+                onError={handleImgError}
+                style={{ width: "100%", height: "100%", objectFit: "cover", borderRadius: "50%" }}
+              />
+            ) : (
+              <span style={{
+                fontFamily: "var(--font-display)",
+                fontWeight: 600, fontSize: 17,
+                color: avatarColor, letterSpacing: "-0.5px",
+              }}>
+                {initials}
+              </span>
+            )}
           </div>
 
           {/* Status pill */}

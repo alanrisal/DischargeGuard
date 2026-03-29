@@ -63,6 +63,10 @@ function DashboardPage() {
   const displayLangCode  = patient?.language_code   ?? scenarioFallback.language_code;
   const displayLang      = patient?.language        ?? scenarioFallback.language;
   const initials         = displayName.split(" ").map((n: string) => n[0]).join("").toUpperCase().slice(0, 2);
+  const [photoExt,    setPhotoExt]    = useState<"jpg"|"png">("jpg");
+  const [photoFailed, setPhotoFailed] = useState(false);
+  const photoSrc = `${process.env.NEXT_PUBLIC_SUPABASE_URL}/storage/v1/object/public/patient-photos/${displayMrn}.${photoExt}`;
+  const handlePhotoError = () => { if (photoExt === "jpg") setPhotoExt("png"); else setPhotoFailed(true); };
   const doneCount        = completedSteps.length;
   const totalSteps       = 9;
   const comp             = Math.round((doneCount / totalSteps) * 100);
@@ -224,14 +228,16 @@ function DashboardPage() {
             background: "rgba(255,255,255,0.05)",
             border: `2px solid ${avatarColor}40`,
             display: "flex", alignItems: "center", justifyContent: "center",
-            position: "relative",
+            position: "relative", overflow: "hidden",
           }}>
-            <span style={{
-              fontFamily: "var(--font-display)", fontWeight: 600, fontSize: 22,
-              color: avatarColor, letterSpacing: "-0.5px",
-            }}>
-              {initials}
-            </span>
+            {!photoFailed ? (
+              <img src={photoSrc} alt={displayName} onError={handlePhotoError}
+                style={{ width: "100%", height: "100%", objectFit: "cover", borderRadius: "50%" }} />
+            ) : (
+              <span style={{ fontFamily: "var(--font-display)", fontWeight: 600, fontSize: 22, color: avatarColor, letterSpacing: "-0.5px" }}>
+                {initials}
+              </span>
+            )}
             {callStatus === "live" && (
               <div style={{
                 position: "absolute", inset: -4, borderRadius: "50%",
@@ -441,19 +447,6 @@ function DashboardPage() {
         }}>
           {/* Patient identifier */}
           <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-            <div style={{
-              width: 34, height: 34, borderRadius: "50%",
-              background: "var(--surface-inset)",
-              boxShadow: "inset 3px 3px 7px var(--shadow-dark), inset -3px -3px 7px var(--shadow-light)",
-              display: "flex", alignItems: "center", justifyContent: "center",
-            }}>
-              <span style={{
-                fontFamily: "var(--font-display)", fontWeight: 600,
-                fontSize: 12, color: avatarColor,
-              }}>
-                {initials}
-              </span>
-            </div>
             <div>
               <div style={{
                 fontFamily: "var(--font-body)", fontWeight: 600, fontSize: 13,
