@@ -64,13 +64,7 @@ export default function CallPanel({ phase, subtitle, onStart }: Props) {
           <div style={{ fontSize: 28 }}>📞</div>
           <div style={{ fontSize: 13, fontWeight: 600, color: "#1a2340" }}>Ready to call Maria Garcia</div>
           <div style={{ fontSize: 11, color: "#6b7a9e", fontFamily: "monospace" }}>Post-discharge follow-up · Spanish</div>
-          <button onClick={onStart} style={{
-            marginTop: 6, padding: "10px 28px",
-            background: `linear-gradient(135deg, ${ACCENT}, #1d4ed8)`,
-            color: "white", fontFamily: "inherit", fontSize: 14, fontWeight: 600,
-            border: "none", borderRadius: 10, cursor: "pointer",
-            boxShadow: `0 2px 10px ${ACCENT}40`,
-          }}>
+          <button onClick={onStart} className="button-3" style={{ marginTop: 6 }}>
             ▶ Run Demo Call
           </button>
         </div>
