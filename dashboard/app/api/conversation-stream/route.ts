@@ -1,5 +1,9 @@
 import { NextRequest } from "next/server";
 
+// Keep the serverless function alive for long calls (Vercel Pro: up to 300s)
+export const maxDuration = 300;
+export const dynamic = "force-dynamic";
+
 /**
  * ElevenLabs conversation status flow for Twilio calls:
  *   "in-progress"  → call is live (transcript MAY be empty or partial during the call)

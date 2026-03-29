@@ -105,6 +105,7 @@ function VoiceAgentInner({
   const phoneCompletedRef   = useRef<WorkflowStepId[]>([]);
   const phoneFlaggedRef     = useRef<FlaggedWarning[]>([]);
   const phoneCurrentStepRef = useRef<WorkflowStepId | null>(null);
+  const sessionPollRef      = useRef<ReturnType<typeof setInterval> | null>(null);
 
   // ── Shared refs ──────────────────────────────────────────────────────────────
   const transcriptRef = useRef<HTMLDivElement>(null);
@@ -129,8 +130,11 @@ function VoiceAgentInner({
       transcriptRef.current.scrollTop = transcriptRef.current.scrollHeight;
   }, [displayTranscript]);
 
-  // Cleanup SSE on unmount
-  useEffect(() => () => { esRef.current?.close(); }, []);
+  // Cleanup SSE + session polling on unmount
+  useEffect(() => () => {
+    esRef.current?.close();
+    if (sessionPollRef.current) clearInterval(sessionPollRef.current);
+  }, []);
 
   // ── Browser mode: fire onCallEnd on disconnect ───────────────────────────────
   useEffect(() => {
@@ -190,6 +194,53 @@ function VoiceAgentInner({
     }
   }
 
+  // ── Session-state polling (reads KV written by agent webhooks) ──────────────
+  // Gives us live checkpoint updates during phone calls where ElevenLabs
+  // doesn't stream transcript per-turn (Twilio limitation).
+  function startSessionPolling(conversationId: string) {
+    if (sessionPollRef.current) clearInterval(sessionPollRef.current);
+    sessionPollRef.current = setInterval(async () => {
+      try {
+        const r = await fetch(`/api/session-state?conversation_id=${conversationId}`);
+        const d = await r.json();
+        if (!d.found) return;
+
+        // Webhook-reported step takes priority over transcript inference
+        if (d.currentStep && d.currentStep !== phoneCurrentStepRef.current) {
+          const incoming = d.currentStep as WorkflowStepId;
+          // Complete the previous step if we've moved on
+          const prev = phoneCurrentStepRef.current;
+          if (prev && !phoneCompletedRef.current.includes(prev)) {
+            phoneCompletedRef.current = [...phoneCompletedRef.current, prev];
+            setPhoneCompletedSteps([...phoneCompletedRef.current]);
+          }
+          phoneCurrentStepRef.current = incoming;
+          setPhoneCurrentStep(incoming);
+        }
+
+        // Merge KV warnings (agent called flag_warning_sign webhook)
+        if (Array.isArray(d.flaggedWarnings) && d.flaggedWarnings.length > 0) {
+          const newW = (d.flaggedWarnings as { sign: string; severity: string }[]).filter(
+            (w) => !phoneFlaggedRef.current.some((e) => e.sign === w.sign)
+          );
+          if (newW.length > 0) {
+            const withIds: FlaggedWarning[] = newW.map((w) => ({
+              id: Date.now() + Math.random(),
+              sign: w.sign,
+              severity: (w.severity === "urgent" ? "urgent" : "warning") as "urgent" | "warning",
+            }));
+            phoneFlaggedRef.current = [...phoneFlaggedRef.current, ...withIds];
+            setPhoneFlaggedWarnings([...phoneFlaggedRef.current]);
+          }
+        }
+      } catch { /* silent — network blip, keep polling */ }
+    }, 2000);
+  }
+
+  function stopSessionPolling() {
+    if (sessionPollRef.current) { clearInterval(sessionPollRef.current); sessionPollRef.current = null; }
+  }
+
   // ── Phone call start ─────────────────────────────────────────────────────────
   async function startPhoneCall() {
     // Reset all phone-mode state
@@ -222,6 +273,10 @@ function VoiceAgentInner({
 
       setPhoneStatus("connected");
 
+      // Start polling KV session state so checkpoints update live during the call.
+      // (ElevenLabs doesn't stream per-turn transcript for Twilio calls.)
+      startSessionPolling(conversationId);
+
       const es = new EventSource(`/api/conversation-stream?conversationId=${conversationId}`);
       esRef.current = es;
 
@@ -242,6 +297,8 @@ function VoiceAgentInner({
           processPhoneEntry(entry);
 
         } else if (msg.type === "end") {
+          // Full transcript is now in phoneTxRef — stop polling and fire onCallEnd
+          stopSessionPolling();
           // Mark the last active step as completed before ending
           const last = phoneCurrentStepRef.current;
           if (last && !phoneCompletedRef.current.includes(last)) {
@@ -267,7 +324,29 @@ function VoiceAgentInner({
         }
       };
 
-      es.onerror = () => { setPhoneStatus("done"); es.close(); };
+      // onerror fires when: (a) Vercel drops the SSE connection, (b) server closes
+      // after sending the "end" event. In case (b) firedRef is already true so
+      // onCallEnd won't double-fire. In case (a) we surface whatever we have.
+      es.onerror = () => {
+        stopSessionPolling();
+        setPhoneStatus("done");
+        es.close();
+        if (!firedRef.current) {
+          firedRef.current = true;
+          const last = phoneCurrentStepRef.current;
+          if (last && !phoneCompletedRef.current.includes(last)) {
+            phoneCompletedRef.current = [...phoneCompletedRef.current, last];
+            setPhoneCompletedSteps([...phoneCompletedRef.current]);
+          }
+          onCallEnd?.({
+            completedSteps: phoneCompletedRef.current as unknown as string[],
+            flaggedWarnings: phoneFlaggedRef.current,
+            transcript: phoneTxRef.current
+              .map((e) => `${e.role === "agent" ? "ALEX" : "PT"}: ${e.text}`)
+              .join("\n"),
+          });
+        }
+      };
 
     } catch (err: unknown) {
       setPhoneError(err instanceof Error ? err.message : "Unknown error");
@@ -276,6 +355,7 @@ function VoiceAgentInner({
   }
 
   function endPhoneCall() {
+    stopSessionPolling();
     esRef.current?.close();
     const last = phoneCurrentStepRef.current;
     if (last && !phoneCompletedRef.current.includes(last)) {
