@@ -73,6 +73,7 @@ function VoiceAgentInner({
   onStepUpdate,
   onDetailedStepUpdate,
   onSpeakingChange,
+  onTranscriptUpdate,
 }: {
   phoneNumber: string;
   patientData?: PatientVoiceData;
@@ -86,6 +87,7 @@ function VoiceAgentInner({
   onStepUpdate?: (steps: number, warnings: number) => void;
   onDetailedStepUpdate?: (completedSteps: string[], currentStep: string | null) => void;
   onSpeakingChange?: (isSpeaking: boolean) => void;
+  onTranscriptUpdate?: (transcript: TranscriptEntry[]) => void;
 }) {
   // ── Browser-WebSocket mode ───────────────────────────────────────────────────
   const {
@@ -137,6 +139,11 @@ function VoiceAgentInner({
     if (transcriptRef.current)
       transcriptRef.current.scrollTop = transcriptRef.current.scrollHeight;
   }, [displayTranscript]);
+
+  // Bubble live transcript to parent for ComprehensionTranscript
+  useEffect(() => {
+    onTranscriptUpdate?.(displayTranscript);
+  }, [displayTranscript]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // Cleanup SSE + session polling on unmount
   useEffect(() => () => {
@@ -613,13 +620,14 @@ function StatusDot({ status, isSpeaking }: { status: string; isSpeaking: boolean
 // ── Public export ─────────────────────────────────────────────────────────────
 export default function VoiceAgentPanel({
   onCallStart, onCallEnd, onStepUpdate, onDetailedStepUpdate, onSpeakingChange,
-  patientData, scenarioId,
+  onTranscriptUpdate, patientData, scenarioId,
 }: {
   onCallStart?: () => void;
   onCallEnd?: (data: { completedSteps: string[]; flaggedWarnings: { sign: string; severity: string }[]; transcript: string }) => void;
   onStepUpdate?: (steps: number, warnings: number) => void;
   onDetailedStepUpdate?: (completedSteps: string[], currentStep: string | null) => void;
   onSpeakingChange?: (isSpeaking: boolean) => void;
+  onTranscriptUpdate?: (transcript: TranscriptEntry[]) => void;
   patientData?: PatientVoiceData;
   scenarioId?: string;
 }) {
@@ -670,6 +678,7 @@ export default function VoiceAgentPanel({
         onStepUpdate={onStepUpdate}
         onDetailedStepUpdate={onDetailedStepUpdate}
         onSpeakingChange={onSpeakingChange}
+        onTranscriptUpdate={onTranscriptUpdate}
       />
     </ConversationProvider>
   );

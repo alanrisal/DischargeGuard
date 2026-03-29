@@ -4,11 +4,12 @@ import { useSearchParams } from "next/navigation";
 import Link from "next/link";
 import VoiceAgentPanel from "@/components/VoiceAgentPanel";
 import SummaryCard from "@/components/SummaryCard";
-import AgentGraph from "@/components/AgentGraph";
 import Waveform from "@/components/dashboard/Waveform";
 import RadialSpoke from "@/components/dashboard/RadialSpoke";
-import MedicationsPanel from "@/components/dashboard/MedicationsPanel";
+import ComprehensionTranscript from "@/components/dashboard/ComprehensionTranscript";
+import MedChecklist from "@/components/dashboard/MedChecklist";
 import { getScenario } from "@/lib/scenarioData";
+import type { TranscriptEntry } from "@/lib/useVoiceAgent";
 
 type CallStatus = "idle" | "live" | "done";
 
@@ -44,6 +45,7 @@ function DashboardPage() {
   const [currentStep,     setCurrentStep]     = useState<string | null>(null);
   const [flags,           setFlags]           = useState<FlagEntry[]>([]);
   const [isAgentSpeaking, setIsAgentSpeaking] = useState(false);
+  const [liveTranscript,  setLiveTranscript]  = useState<TranscriptEntry[]>([]);
   const [sessionData,     setSessionData]     = useState<{
     completedSteps: string[];
     flaggedWarnings: { sign: string; severity: string }[];
@@ -77,6 +79,7 @@ function DashboardPage() {
     setCurrentStep(null);
     setFlags([]);
     setIsAgentSpeaking(false);
+    setLiveTranscript([]);
     timerRef.current = setInterval(() => {
       if (startRef.current === null) return;
       const elapsed = Date.now() - startRef.current;
@@ -100,6 +103,17 @@ function DashboardPage() {
     setCallStatus("done");
     setIsAgentSpeaking(false);
 
+    // Parse raw transcript string into typed entries for ComprehensionTranscript
+    const parsed: TranscriptEntry[] = data.transcript
+      .split("\n")
+      .filter(Boolean)
+      .map((line, i) => ({
+        id: i,
+        role: line.startsWith("ALEX:") ? "agent" : "user",
+        text: line.replace(/^(ALEX|PT):\s*/, ""),
+      }));
+    setLiveTranscript(parsed);
+
     const c = Math.round((data.completedSteps.length / totalSteps) * 100);
     fetch("/api/send-summary", {
       method: "POST",
@@ -116,11 +130,8 @@ function DashboardPage() {
     }).catch(console.error);
   };
 
-  const handleStepUpdate = (steps: number, warns: number) => {
-    // we get detailed updates via onDetailedStepUpdate
-    if (warns > flags.length) {
-      // new warning added via step count increase — handled separately
-    }
+  const handleStepUpdate = (_steps: number, _warns: number) => {
+    // detailed updates come via onDetailedStepUpdate
   };
 
   const handleDetailedStepUpdate = (steps: string[], step: string | null) => {
@@ -373,7 +384,10 @@ function DashboardPage() {
             display: "flex", alignItems: "center", gap: 8,
             marginBottom: 18,
           }}>
-            <span style={{ fontSize: 14 }}>🚨</span>
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--warning-red)" strokeWidth="2.5" strokeLinecap="round" aria-hidden="true">
+              <path d="M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z"/>
+              <line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/>
+            </svg>
             <div>
               <div style={{
                 fontSize: 9, fontWeight: 700, color: "var(--warning-red)",
@@ -409,10 +423,9 @@ function DashboardPage() {
       ══════════════════════════════════════════════════════════════════ */}
       <main style={{
         flex: 1,
-        overflowY: "auto",
+        overflow: "hidden",
         display: "flex",
         flexDirection: "column",
-        gap: 0,
       }}>
 
         {/* ── Clinical Header Bar ── */}
@@ -490,6 +503,17 @@ function DashboardPage() {
 
           <div style={{ flex: 1 }} />
 
+          {/* Inline waveform */}
+          <div style={{
+            width: 160, height: 36,
+            background: "var(--surface-inset)",
+            boxShadow: "inset 2px 2px 6px var(--shadow-dark), inset -2px -2px 6px var(--shadow-light)",
+            borderRadius: 8, overflow: "hidden", padding: "4px 8px",
+            display: "flex", alignItems: "center",
+          }}>
+            <Waveform isActive={callStatus === "live"} height={28} />
+          </div>
+
           {/* Status badge */}
           <div style={{
             display: "flex", alignItems: "center", gap: 7,
@@ -519,235 +543,138 @@ function DashboardPage() {
           </div>
         </div>
 
-        {/* ── Scrollable content ── */}
-        <div style={{ flex: 1, overflowY: "auto", padding: "20px 24px 32px", display: "flex", flexDirection: "column", gap: 20 }}>
+        {/* ── Main workspace — scrollable, 3-pane grid ── */}
+        <div style={{ flex: 1, overflowY: "auto", padding: "16px 20px 32px", display: "grid", gridTemplateColumns: "2fr 4fr 2fr", gap: 16, alignItems: "start" }}>
 
-        {/* ── Waveform Panel ── */}
-        <section style={{
-          background: "var(--surface-raised)",
-          boxShadow: "6px 6px 14px var(--shadow-dark), -6px -6px 14px var(--shadow-light)",
-          borderRadius: 16,
-          padding: "20px 24px",
-        }}>
-          <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 14 }}>
-            <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-              <div style={{
-                width: 8, height: 8, borderRadius: "50%",
-                background: callStatus === "live" && isAgentSpeaking ? "var(--accent-clinical)" : "var(--waveform-idle)",
-                animation: callStatus === "live" && isAgentSpeaking ? "pulse-dot 1s ease-in-out infinite" : undefined,
-              }} />
-              <span style={{ fontFamily: "var(--font-body)", fontWeight: 500, fontSize: 12, color: "var(--text-secondary)" }}>
-                {callStatus === "live" && isAgentSpeaking ? "Agent Speaking" : callStatus === "live" ? "Listening…" : "Live Call Channel"}
-              </span>
-            </div>
-            <div style={{ fontFamily: "var(--font-body)", fontSize: 11, color: "var(--text-tertiary)", fontWeight: 500, letterSpacing: "0.06em" }}>
-              {callStatus === "live" ? callTime : callStatus === "done" ? `${callTime} total` : "—"}
-            </div>
-          </div>
+          {/* LEFT PANE — Coverage + Clinical Flags */}
+          <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
 
-          <div style={{
-            background: "var(--surface-inset)",
-            boxShadow: "inset 4px 4px 10px var(--shadow-dark), inset -4px -4px 10px var(--shadow-light)",
-            borderRadius: 12,
-            padding: "12px 16px",
-          }}>
-            <Waveform isActive={callStatus === "live"} height={68} />
-          </div>
-        </section>
-
-        {/* ── Middle row: Voice Agent Panel + Radial ── */}
-        <div style={{ display: "grid", gridTemplateColumns: "1fr 300px", gap: 20 }}>
-
-          {/* Voice Agent + Transcript */}
-          <section style={{
-            background: "var(--surface-raised)",
-            boxShadow: "6px 6px 14px var(--shadow-dark), -6px -6px 14px var(--shadow-light)",
-            borderRadius: 16,
-            padding: "20px 24px",
-            display: "flex",
-            flexDirection: "column",
-            gap: 0,
-            minHeight: 360,
-          }}>
-            <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 16 }}>
-              <h2 style={{
-                fontFamily: "var(--font-display)", fontStyle: "italic",
-                fontWeight: 300, fontSize: 17, color: "var(--text-primary)",
-              }}>
-                Voice Session
-              </h2>
-            </div>
-
-            <VoiceAgentPanel
-              onCallStart={handleCallStart}
-              onCallEnd={handleCallEnd}
-              onStepUpdate={handleStepUpdate}
-              onDetailedStepUpdate={handleDetailedStepUpdate}
-              onSpeakingChange={handleSpeakingChange}
-              patientData={scenarioFallback.voiceData}
-              scenarioId={scenarioParam}
-            />
-          </section>
-
-          {/* Radial Spoke */}
-          <section style={{
-            background: "var(--surface-raised)",
-            boxShadow: "6px 6px 14px var(--shadow-dark), -6px -6px 14px var(--shadow-light)",
-            borderRadius: 16,
-            padding: "20px 16px 16px",
-            display: "flex",
-            flexDirection: "column",
-            alignItems: "center",
-            gap: 4,
-          }}>
-            <h2 style={{
-              fontFamily: "var(--font-display)", fontStyle: "italic",
-              fontWeight: 300, fontSize: 15, color: "var(--text-primary)",
-              alignSelf: "flex-start", marginBottom: 8,
+            {/* Call Coverage */}
+            <section style={{
+              background: "var(--surface-raised)",
+              boxShadow: "6px 6px 14px var(--shadow-dark), -6px -6px 14px var(--shadow-light)",
+              borderRadius: 16, padding: "16px",
+              display: "flex", flexDirection: "column", alignItems: "center", gap: 8,
+              flexShrink: 0,
             }}>
-              Call Coverage
-            </h2>
-
-            <RadialSpoke completedSteps={completedSteps} currentStep={currentStep} />
-
-            {/* Comprehension bar */}
-            <div style={{ width: "100%", marginTop: 8 }}>
-              <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 5 }}>
-                <span style={{ fontSize: 10, fontWeight: 600, letterSpacing: "0.08em", color: "var(--text-tertiary)", textTransform: "uppercase" }}>Comprehension</span>
-                <span style={{ fontSize: 11, fontWeight: 600, color: comp > 80 ? "var(--accent-success)" : comp > 50 ? "var(--warning-amber)" : comp > 0 ? "var(--warning-red)" : "var(--text-tertiary)" }}>{comp}%</span>
-              </div>
-              <div style={{
-                background: "var(--surface-inset)",
-                boxShadow: "inset 2px 2px 5px var(--shadow-dark), inset -2px -2px 5px var(--shadow-light)",
-                borderRadius: 999, height: 8, overflow: "hidden",
-              }}>
-                <div style={{
-                  height: "100%", borderRadius: 999,
-                  width: `${comp}%`,
-                  background: comp > 80 ? "var(--accent-success)" : comp > 50 ? "var(--warning-amber)" : "var(--warning-red)",
-                  transition: "width 0.8s cubic-bezier(0.16,1,0.3,1), background 0.4s ease",
-                }} />
-              </div>
-            </div>
-          </section>
-        </div>
-
-        {/* ── Bottom row: Warnings + Medications + Agent Graph / Summary ── */}
-        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 20 }}>
-
-          {/* Clinical Flags */}
-          <section style={{
-            background: "var(--surface-raised)",
-            boxShadow: "6px 6px 14px var(--shadow-dark), -6px -6px 14px var(--shadow-light)",
-            borderRadius: 16,
-            padding: "20px 24px",
-          }}>
-            <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 16 }}>
               <h2 style={{
                 fontFamily: "var(--font-display)", fontStyle: "italic",
-                fontWeight: 300, fontSize: 15, color: "var(--text-primary)",
+                fontWeight: 300, fontSize: 14, color: "var(--text-primary)",
+                alignSelf: "flex-start",
               }}>
-                Clinical Flags
+                Call Coverage
               </h2>
-              {flags.length > 0 && (
-                <div style={{
-                  background: "var(--surface-inset)",
-                  boxShadow: "inset 2px 2px 5px var(--shadow-dark), inset -2px -2px 5px var(--shadow-light)",
-                  borderRadius: 999, padding: "3px 10px",
-                  fontSize: 10, fontWeight: 700,
-                  color: urgentFlags > 0 ? "var(--warning-red)" : "var(--warning-amber)",
-                  letterSpacing: "0.04em",
-                }}>
-                  {flags.length} FLAG{flags.length !== 1 ? "S" : ""}
+              <RadialSpoke completedSteps={completedSteps} currentStep={currentStep} />
+              <div style={{ width: "100%" }}>
+                <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 4 }}>
+                  <span style={{ fontSize: 9, fontWeight: 600, letterSpacing: "0.08em", color: "var(--text-tertiary)", textTransform: "uppercase" }}>Comprehension</span>
+                  <span style={{ fontSize: 10, fontWeight: 600, color: comp > 80 ? "var(--accent-success)" : comp > 50 ? "var(--warning-amber)" : comp > 0 ? "var(--warning-red)" : "var(--text-tertiary)" }}>{comp}%</span>
                 </div>
-              )}
-            </div>
-
-            {flags.length === 0 ? (
-              <div style={{
-                background: "var(--surface-inset)",
-                boxShadow: "inset 3px 3px 7px var(--shadow-dark), inset -3px -3px 7px var(--shadow-light)",
-                borderRadius: 12, padding: "24px",
-                textAlign: "center",
-                fontSize: 12, color: "var(--text-tertiary)", fontWeight: 300,
-                fontStyle: "italic",
-              }}>
-                No concerns flagged
+                <div style={{ background: "var(--surface-inset)", boxShadow: "inset 2px 2px 5px var(--shadow-dark), inset -2px -2px 5px var(--shadow-light)", borderRadius: 999, height: 6, overflow: "hidden" }}>
+                  <div style={{ height: "100%", borderRadius: 999, width: `${comp}%`, background: comp > 80 ? "var(--accent-success)" : comp > 50 ? "var(--warning-amber)" : "var(--warning-red)", transition: "width 0.8s cubic-bezier(0.16,1,0.3,1)" }} />
+                </div>
               </div>
-            ) : (
-              <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
-                {flags.map((flag) => (
-                  <div
-                    key={flag.id}
-                    style={{
-                      background: flag.severity === "urgent" ? "var(--warning-red-bg)" : "var(--warning-amber-bg)",
-                      borderLeft: `3px solid ${flag.severity === "urgent" ? "var(--warning-red)" : "var(--warning-amber)"}`,
-                      borderRadius: "0 10px 10px 0",
-                      padding: "10px 14px",
-                      animation: "animate-flag-in 0.35s ease both, animate-flag-pulse 0.8s ease both",
-                    }}
-                  >
-                    <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 3 }}>
-                      <span style={{
-                        fontSize: 9, fontWeight: 700, letterSpacing: "0.08em",
-                        color: flag.severity === "urgent" ? "var(--warning-red)" : "var(--warning-amber)",
-                        textTransform: "uppercase",
-                        background: flag.severity === "urgent" ? "rgba(184,64,64,0.12)" : "rgba(212,129,58,0.12)",
-                        borderRadius: 999, padding: "2px 8px",
-                      }}>
-                        {flag.severity}
-                      </span>
-                      <span style={{ fontSize: 10, color: "var(--text-tertiary)", fontWeight: 300 }}>
-                        {flag.time}
-                      </span>
-                    </div>
-                    <div style={{
-                      fontSize: 12, fontWeight: 500, color: "var(--text-primary)",
-                      textDecoration: "underline",
-                      textDecorationColor: flag.severity === "urgent" ? "var(--warning-red)" : "var(--warning-amber)",
-                      textUnderlineOffset: 3,
-                    }}>
-                      {flag.text}
-                    </div>
+            </section>
+
+            {/* Clinical Flags */}
+            <section style={{
+              background: "var(--surface-raised)",
+              boxShadow: "6px 6px 14px var(--shadow-dark), -6px -6px 14px var(--shadow-light)",
+              borderRadius: 16, padding: "16px",
+              display: "flex", flexDirection: "column",
+            }}>
+              <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 12, flexShrink: 0 }}>
+                <h2 style={{ fontFamily: "var(--font-display)", fontStyle: "italic", fontWeight: 300, fontSize: 14, color: "var(--text-primary)" }}>
+                  Clinical Flags
+                </h2>
+                {flags.length > 0 && (
+                  <div style={{ background: "var(--surface-inset)", boxShadow: "inset 2px 2px 5px var(--shadow-dark), inset -2px -2px 5px var(--shadow-light)", borderRadius: 999, padding: "2px 8px", fontSize: 9, fontWeight: 700, color: urgentFlags > 0 ? "var(--warning-red)" : "var(--warning-amber)" }}>
+                    {flags.length} FLAG{flags.length !== 1 ? "S" : ""}
                   </div>
-                ))}
+                )}
               </div>
-            )}
-          </section>
+              <div style={{ marginTop: 4 }}>
+                {flags.length === 0 ? (
+                  <div style={{ background: "var(--surface-inset)", boxShadow: "inset 3px 3px 7px var(--shadow-dark), inset -3px -3px 7px var(--shadow-light)", borderRadius: 12, padding: "20px", textAlign: "center", fontSize: 11, color: "var(--text-tertiary)", fontStyle: "italic" }}>
+                    No concerns flagged
+                  </div>
+                ) : (
+                  <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+                    {flags.map((flag) => (
+                      <div key={flag.id} style={{ background: flag.severity === "urgent" ? "var(--warning-red-bg)" : "var(--warning-amber-bg)", borderLeft: `3px solid ${flag.severity === "urgent" ? "var(--warning-red)" : "var(--warning-amber)"}`, borderRadius: "0 10px 10px 0", padding: "8px 12px" }}>
+                        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 2 }}>
+                          <span style={{ fontSize: 9, fontWeight: 700, color: flag.severity === "urgent" ? "var(--warning-red)" : "var(--warning-amber)", textTransform: "uppercase", letterSpacing: "0.07em" }}>{flag.severity}</span>
+                          <span style={{ fontSize: 9, color: "var(--text-tertiary)" }}>{flag.time}</span>
+                        </div>
+                        <div style={{ fontSize: 11, fontWeight: 500, color: "var(--text-primary)", textDecoration: "underline", textDecorationColor: flag.severity === "urgent" ? "var(--warning-red)" : "var(--warning-amber)", textUnderlineOffset: 3 }}>{flag.text}</div>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+            </section>
+          </div>
 
-          {/* Medications Panel */}
-          <MedicationsPanel voiceData={scenarioFallback.voiceData} />
-
-          {/* Agent Graph / Summary */}
+          {/* CENTER PANE — Voice controls + Comprehension transcript */}
           <section style={{
             background: "var(--surface-raised)",
             boxShadow: "6px 6px 14px var(--shadow-dark), -6px -6px 14px var(--shadow-light)",
-            borderRadius: 16,
-            padding: "20px 24px",
-            display: "flex",
-            flexDirection: "column",
-            overflow: "hidden",
+            borderRadius: 16, padding: "16px 20px",
+            display: "flex", flexDirection: "column", gap: 12,
           }}>
-            {callStatus === "done" && sessionData ? (
-              <SummaryCard sessionData={sessionData} />
-            ) : (
-              <>
-                <h2 style={{
-                  fontFamily: "var(--font-display)", fontStyle: "italic",
-                  fontWeight: 300, fontSize: 15, color: "var(--text-primary)",
-                  marginBottom: 12,
-                }}>
-                  Agent Network
-                </h2>
-                <div style={{ flex: 1 }}>
-                  <AgentGraph particles={[]} a2aMsgs={[]} />
-                </div>
-              </>
-            )}
-          </section>
-        </div>
+            {/* Voice agent controls — compact, fixed height */}
+            <div style={{ flexShrink: 0 }}>
+              <VoiceAgentPanel
+                onCallStart={handleCallStart}
+                onCallEnd={handleCallEnd}
+                onStepUpdate={handleStepUpdate}
+                onDetailedStepUpdate={handleDetailedStepUpdate}
+                onSpeakingChange={handleSpeakingChange}
+                onTranscriptUpdate={setLiveTranscript}
+                patientData={scenarioFallback.voiceData}
+                scenarioId={scenarioParam}
+              />
+            </div>
 
-        {/* Close scrollable content div */}
+            {/* Divider */}
+            <div style={{ height: 1, background: "var(--shadow-dark)", flexShrink: 0 }} />
+
+            {/* Comprehension transcript — fixed height, always visible, scrolls internally */}
+            <div style={{ minHeight: 420 }}>
+              <ComprehensionTranscript
+                transcript={liveTranscript}
+                isConnected={callStatus === "live"}
+                isPhoneMode={false}
+              />
+            </div>
+          </section>
+
+          {/* RIGHT PANE — Medication checklist + post-call summary */}
+          <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
+            <section style={{
+              background: "var(--surface-raised)",
+              boxShadow: "6px 6px 14px var(--shadow-dark), -6px -6px 14px var(--shadow-light)",
+              borderRadius: 16, padding: "16px",
+              display: "flex", flexDirection: "column",
+            }}>
+              <MedChecklist
+                voiceData={scenarioFallback.voiceData}
+                completedSteps={completedSteps}
+                transcript={liveTranscript}
+              />
+            </section>
+
+            {callStatus === "done" && sessionData && (
+              <section style={{
+                background: "var(--surface-raised)",
+                boxShadow: "6px 6px 14px var(--shadow-dark), -6px -6px 14px var(--shadow-light)",
+                borderRadius: 16, padding: "16px",
+              }}>
+                <SummaryCard sessionData={sessionData} />
+              </section>
+            )}
+          </div>
+
         </div>
       </main>
 

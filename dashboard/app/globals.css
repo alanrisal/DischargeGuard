@@ -10,9 +10,18 @@
   --shadow-dark: rgba(196, 183, 174, 0.72);
 
   --text-primary: #2C2420;
-  --text-secondary: #7A6E68;
+  --text-secondary: #64748B;   /* Slate — WCAG AA contrast on light bg */
   --text-tertiary: #A89E98;
 
+  /* Clinical Blue — primary actions (WCAG AA on white) */
+  --clinical-blue: #005EB8;
+  --clinical-blue-light: rgba(0, 94, 184, 0.10);
+
+  /* Alert Red — critical misunderstandings only */
+  --alert-red: #D4351C;
+  --alert-red-light: rgba(212, 53, 28, 0.10);
+
+  /* Legacy aliases — kept for existing components */
   --accent-clinical: #3B6FA0;
   --accent-clinical-light: rgba(59, 111, 160, 0.12);
   --accent-warm: #C2714F;
@@ -25,7 +34,7 @@
   --warning-red: #B84040;
   --warning-red-bg: #F5E8E8;
 
-  --waveform-active: #3B6FA0;
+  --waveform-active: #005EB8;
   --waveform-idle: #C2BAB4;
 
   --font-display: 'Fraunces', Georgia, serif;
@@ -268,7 +277,80 @@ h1, h2, h3, h4, h5 {
 .animate-flag-in    { animation: flag-in 0.35s ease both; }
 .animate-flag-pulse { animation: flag-pulse 0.8s ease both; }
 
-/* ─── Hover link helpers (for server components that can't use event handlers) ── */
+/* ─── Nav Rail ───────────────────────────────────────────────────────────────── */
+.nav-rail {
+  width: 56px;
+  flex-shrink: 0;
+  background: #1F1A16;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 16px 0;
+  gap: 4px;
+  z-index: 10;
+}
+
+.nav-rail-btn {
+  width: 44px;
+  height: 44px;
+  border-radius: 12px;
+  border: none;
+  background: transparent;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: rgba(240, 235, 227, 0.35);
+  font-size: 18px;
+  transition: background 150ms ease, color 150ms ease;
+  text-decoration: none;
+  position: relative;
+}
+
+.nav-rail-btn:hover,
+.nav-rail-btn.active {
+  background: rgba(255, 255, 255, 0.08);
+  color: rgba(240, 235, 227, 0.9);
+}
+
+.nav-rail-btn.active::before {
+  content: "";
+  position: absolute;
+  left: 0;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 3px;
+  height: 20px;
+  background: var(--clinical-blue);
+  border-radius: 0 3px 3px 0;
+}
+
+/* ─── WCAG touch targets — all interactive elements ≥ 44×44px ───────────────── */
+button, a, [role="button"] {
+  min-height: 44px;
+  min-width: 44px;
+}
+
+/* Override for inline/text links that shouldn't be 44px tall */
+a.inline-link {
+  min-height: unset;
+  min-width: unset;
+}
+
+/* ─── Body text minimum 16px for medical content ─────────────────────────────── */
+.med-body {
+  font-size: 16px;
+  line-height: 1.6;
+  color: var(--text-primary);
+}
+
+.med-name {
+  font-size: 18px;
+  font-weight: 700;
+  color: var(--text-primary);
+}
+
+/* ─── Nav Rail ───────────────────────────────────────────────────────────────── */
 .back-link {
   color: var(--text-tertiary);
   transition: color 200ms ease;
