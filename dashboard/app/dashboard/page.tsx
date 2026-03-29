@@ -100,6 +100,8 @@ function DashboardPage() {
     if (sentRef.current) return;
     sentRef.current = true;
     if (timerRef.current) clearInterval(timerRef.current);
+    // Only process if call was actually live
+    if (callStatus !== "live") return;
     const s = startRef.current !== null ? Math.floor((Date.now() - startRef.current) / 1000) : 0;
     const duration = `${Math.floor(s / 60)}:${(s % 60).toString().padStart(2, "0")}`;
     setSessionData({ ...data, callDuration: duration });
