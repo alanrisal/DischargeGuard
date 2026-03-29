@@ -49,7 +49,7 @@ export async function POST(req: NextRequest) {
     if (completedSteps.includes("warning_signs")) {
       highlights.push("⚠️ Warning signs reviewed with patient");
     }
-    flaggedWarnings.forEach((w) => {
+    flaggedWarnings.forEach((w: { sign: string; severity: string }) => {
       highlights.push(`${w.severity === "urgent" ? "🚨" : "⚠️"} Concerning symptom flagged: ${w.sign}`);
     });
     if (greenCount === totalItems) {
