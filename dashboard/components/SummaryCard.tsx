@@ -1,68 +1,172 @@
 "use client";
-import type { Phase, ItemState } from "@/lib/types";
-import { CHECKLIST } from "@/lib/demoData";
 
-interface Props {
-  phase: Phase;
-  items: Record<string, ItemState>;
-  callTime: string;
-  alerts: { length: number };
+const STEPS: Record<string, string> = {
+  opening: "Opening", symptoms: "Symptoms Check", medications: "Medications",
+  activity_restrictions: "Activity Restrictions", wound_care: "Wound Care",
+  follow_ups: "Follow-Up Appointments", warning_signs: "Warning Signs",
+  open_questions: "Open Questions", closing: "Closing",
+};
+
+// Keywords to detect in patient (PT) lines
+const MED_KEYWORDS    = ["medication", "pill", "tablet", "taking", "dose", "prescription", "medicine"];
+const SYMPTOM_KEYWORDS = ["pain", "fever", "headache", "bleeding", "dizzy", "nausea", "swelling", "breath", "chest", "hurt", "sore", "discomfort"];
+const POSITIVE_KEYWORDS = ["yes", "understand", "got it", "okay", "sure", "will do", "i will", "i'll", "confirmed"];
+
+function parseTranscript(transcript: string): {
+  medLines: string[];
+  symptomLines: string[];
+  keyMoments: string[];
+} {
+  const lines = transcript.split("\n").filter(Boolean);
+  const ptLines = lines.filter((l) => l.startsWith("PT:")).map((l) => l.replace(/^PT:\s*/, "").trim());
+
+  const medLines: string[]     = [];
+  const symptomLines: string[] = [];
+  const keyMoments: string[]   = [];
+
+  ptLines.forEach((line) => {
+    const lower = line.toLowerCase();
+    if (MED_KEYWORDS.some((k) => lower.includes(k))) medLines.push(line);
+    if (SYMPTOM_KEYWORDS.some((k) => lower.includes(k))) symptomLines.push(line);
+    if (POSITIVE_KEYWORDS.some((k) => lower.includes(k)) && line.length < 120) keyMoments.push(line);
+  });
+
+  return {
+    medLines:    medLines.slice(0, 3),
+    symptomLines: symptomLines.slice(0, 3),
+    keyMoments:  keyMoments.slice(0, 2),
+  };
 }
 
-const AGENTS = [
-  { id: "CareCoord",  label: "CareCoordinator",   color: "#e07b54" },
-  { id: "DischargeR", label: "DischargeReader",    color: "#7c9cbf" },
-  { id: "VoiceCoach", label: "VoiceCoach (ES)",    color: "#5aab8a" },
-  { id: "Compr.",     label: "ComprehensionCheck", color: "#c4a35a" },
-  { id: "EscalAgent", label: "EscalationAgent",    color: "#c46a6a" },
-];
-
-export default function SummaryCard({ phase, items, callTime, alerts }: Props) {
-  const greenCount = Object.values(items).filter((v) => v.status === "green").length;
-  const scoredCount = Object.values(items).filter((v) => v.status !== "idle").length;
-
-  const agentStatus = (id: string) => {
-    if (id === "CareCoord")  return phase === "running" ? "Orchestrating" : phase === "done" ? "Complete" : "Standby";
-    if (id === "DischargeR") return phase !== "idle" ? "Parsed ✓" : "Standby";
-    if (id === "VoiceCoach") return phase === "running" ? "On call" : phase === "done" ? "Complete" : "Standby";
-    if (id === "Compr.")     return phase !== "idle" ? `${scoredCount} scored` : "Standby";
-    if (id === "EscalAgent") return alerts.length > 0 ? `${alerts.length} alert sent` : "Monitoring";
-    return "Standby";
+interface Props {
+  sessionData: {
+    completedSteps: string[];
+    flaggedWarnings: { sign: string; severity: string }[];
+    transcript: string;
+    callDuration: string;
   };
+}
+
+export default function SummaryCard({ sessionData }: Props) {
+  const { completedSteps, flaggedWarnings, callDuration, transcript } = sessionData;
+  const total = Object.keys(STEPS).length;
+  const comp  = Math.round((completedSteps.length / total) * 100);
+  const scoreColor = comp > 80 ? "#16a34a" : comp > 50 ? "#d97706" : "#dc2626";
+
+  const { medLines, symptomLines, keyMoments } = parseTranscript(transcript);
+
+  // Build highlights
+  const highlights: { icon: string; color: string; bg: string; border: string; text: string }[] = [];
+
+  if (completedSteps.includes("medications")) {
+    highlights.push({ icon: "💊", color: "#16a34a", bg: "#f0fdf4", border: "#86efac",
+      text: medLines.length > 0
+        ? `Medications reviewed — patient confirmed: "${medLines[0]}"`
+        : "Medications section completed — patient reviewed all prescriptions" });
+  } else {
+    highlights.push({ icon: "💊", color: "#d97706", bg: "#fffbeb", border: "#fcd34d",
+      text: "Medications section not completed — follow-up recommended" });
+  }
+
+  if (completedSteps.includes("symptoms")) {
+    highlights.push({ icon: "🩺", color: "#16a34a", bg: "#f0fdf4", border: "#86efac",
+      text: symptomLines.length > 0
+        ? `Symptoms discussed — patient reported: "${symptomLines[0]}"`
+        : "Symptoms check completed — no critical concerns reported" });
+  }
+
+  if (completedSteps.includes("warning_signs")) {
+    highlights.push({ icon: "⚠️", color: "#16a34a", bg: "#f0fdf4", border: "#86efac",
+      text: "Warning signs reviewed — patient knows when to go to ER" });
+  }
+
+  flaggedWarnings.forEach((w) => {
+    highlights.push({
+      icon: w.severity === "urgent" ? "🚨" : "⚠️",
+      color: w.severity === "urgent" ? "#dc2626" : "#d97706",
+      bg: w.severity === "urgent" ? "#fef2f2" : "#fffbeb",
+      border: w.severity === "urgent" ? "#fca5a5" : "#fcd34d",
+      text: `Concerning symptom flagged: ${w.sign}`,
+    });
+  });
+
+  if (completedSteps.length === total) {
+    highlights.push({ icon: "✅", color: "#16a34a", bg: "#f0fdf4", border: "#86efac",
+      text: "All workflow steps completed successfully" });
+  }
 
   return (
-    <div style={{ display: "flex", flexDirection: "column", height: "100%" }}>
-      <div style={{ fontSize: 10, fontWeight: 600, letterSpacing: "1.5px", textTransform: "uppercase", color: "#a08070", marginBottom: 16, fontFamily: "monospace" }}>
+    <div>
+      <div style={{ fontSize: 10, fontWeight: 600, letterSpacing: "1.5px", textTransform: "uppercase", color: "#6b7a9e", marginBottom: 14, fontFamily: "monospace" }}>
         Session Summary
       </div>
 
-      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8, marginBottom: 12 }}>
+      {/* Stats */}
+      <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 8, marginBottom: 14 }}>
         {[
-          { val: `${greenCount}/${CHECKLIST.length}`, label: "ITEMS GREEN",    color: "#5aab8a" },
-          { val: callTime,                            label: "CALL DURATION",  color: "#e07b54" },
+          { val: `${completedSteps.length}/${total}`, label: "Steps Done",    color: "#16a34a" },
+          { val: `${comp}%`,                          label: "Comprehension", color: scoreColor },
+          { val: callDuration,                        label: "Call Duration", color: "#2563eb" },
         ].map(({ val, label, color }) => (
-          <div key={label} style={{
-            background: "#fdf6f0", border: "1px solid #e8d5c4",
-            borderRadius: 8, padding: 12, textAlign: "center",
-          }}>
-            <div style={{ fontSize: 26, fontWeight: 700, fontFamily: "monospace", color, lineHeight: 1, marginBottom: 4 }}>{val}</div>
-            <div style={{ fontSize: 10, color: "#a08070", fontFamily: "monospace" }}>{label}</div>
+          <div key={label} style={{ background: "#f8faff", border: "1px solid #dde3f5", borderRadius: 8, padding: 12, textAlign: "center" }}>
+            <div style={{ fontSize: 22, fontWeight: 700, fontFamily: "monospace", color, lineHeight: 1, marginBottom: 4 }}>{val}</div>
+            <div style={{ fontSize: 9, color: "#6b7a9e", fontFamily: "monospace" }}>{label}</div>
           </div>
         ))}
       </div>
 
-      <div style={{ background: "#fdf6f0", border: "1px solid #e8d5c4", borderRadius: 8, padding: 12, flex: 1 }}>
-        {AGENTS.map((a) => (
-          <div key={a.id} style={{
-            display: "flex", alignItems: "center", gap: 10,
-            padding: "5px 0", fontSize: 12,
-            borderBottom: "1px solid #f0e4d8",
-          }}>
-            <div style={{ width: 7, height: 7, borderRadius: "50%", background: a.color, flexShrink: 0 }} />
-            <div style={{ flex: 1, fontFamily: "monospace", fontSize: 11, color: "#7a6050" }}>{a.label}</div>
-            <div style={{ fontFamily: "monospace", fontSize: 10, color: a.color }}>{agentStatus(a.id)}</div>
+      {/* Call highlights */}
+      {highlights.length > 0 && (
+        <div style={{ marginBottom: 14 }}>
+          <div style={{ fontSize: 9, fontWeight: 600, color: "#6b7a9e", fontFamily: "monospace", letterSpacing: "1px", textTransform: "uppercase", marginBottom: 8 }}>Call Highlights</div>
+          <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
+            {highlights.map((h, i) => (
+              <div key={i} style={{ display: "flex", alignItems: "flex-start", gap: 8, background: h.bg, border: `1px solid ${h.border}`, borderRadius: 8, padding: "8px 10px" }}>
+                <span style={{ fontSize: 13, flexShrink: 0 }}>{h.icon}</span>
+                <span style={{ fontSize: 11, color: h.color, lineHeight: 1.4 }}>{h.text}</span>
+              </div>
+            ))}
           </div>
-        ))}
+        </div>
+      )}
+
+      {/* Key patient quotes */}
+      {keyMoments.length > 0 && (
+        <div style={{ background: "#f8faff", border: "1px solid #dde3f5", borderRadius: 8, padding: 12, marginBottom: 14 }}>
+          <div style={{ fontSize: 9, fontWeight: 600, color: "#6b7a9e", fontFamily: "monospace", letterSpacing: "1px", textTransform: "uppercase", marginBottom: 8 }}>Patient Responses</div>
+          {keyMoments.map((q, i) => (
+            <div key={i} style={{ fontSize: 11, color: "#1a2340", padding: "4px 0", borderBottom: "1px solid #e8eeff", fontStyle: "italic" }}>
+              "{q}"
+            </div>
+          ))}
+        </div>
+      )}
+
+      {/* Symptom mentions from transcript */}
+      {symptomLines.length > 0 && (
+        <div style={{ background: "#fffbeb", border: "1px solid #fcd34d", borderRadius: 8, padding: 12, marginBottom: 14 }}>
+          <div style={{ fontSize: 9, fontWeight: 600, color: "#d97706", fontFamily: "monospace", letterSpacing: "1px", textTransform: "uppercase", marginBottom: 8 }}>Symptom Mentions</div>
+          {symptomLines.map((s, i) => (
+            <div key={i} style={{ fontSize: 11, color: "#1a2340", padding: "3px 0" }}>⚡ {s}</div>
+          ))}
+        </div>
+      )}
+
+      {/* Workflow progress */}
+      <div style={{ background: "#f8faff", border: "1px solid #dde3f5", borderRadius: 8, padding: 12 }}>
+        <div style={{ fontSize: 9, fontWeight: 600, color: "#6b7a9e", fontFamily: "monospace", letterSpacing: "1px", textTransform: "uppercase", marginBottom: 8 }}>Workflow Progress</div>
+        {Object.entries(STEPS).map(([id, label]) => {
+          const done = completedSteps.includes(id);
+          return (
+            <div key={id} style={{ display: "flex", alignItems: "center", gap: 8, padding: "5px 0", borderBottom: "1px solid #e8eeff" }}>
+              <div style={{ width: 16, height: 16, borderRadius: "50%", flexShrink: 0, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 8, fontWeight: 700, background: done ? "#f0fdf4" : "#f0f4ff", border: `1px solid ${done ? "#86efac" : "#dde3f5"}`, color: done ? "#16a34a" : "#c7d2e8" }}>
+                {done ? "✓" : "○"}
+              </div>
+              <div style={{ flex: 1, fontSize: 11, color: done ? "#1a2340" : "#6b7a9e" }}>{label}</div>
+              <div style={{ fontSize: 9, fontFamily: "monospace", color: done ? "#16a34a" : "#c7d2e8" }}>{done ? "DONE" : "—"}</div>
+            </div>
+          );
+        })}
       </div>
     </div>
   );
