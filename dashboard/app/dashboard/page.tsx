@@ -52,7 +52,7 @@ function DashboardPage() {
   } | null>(null);
 
   const timerRef  = useRef<ReturnType<typeof setInterval> | null>(null);
-  const startRef  = useRef<number>(0);
+  const startRef  = useRef<number | null>(null);
   const sentRef   = useRef(false);
 
   const displayName      = patient?.name            ?? scenarioFallback.name;
@@ -70,7 +70,7 @@ function DashboardPage() {
     // Always clear any stale interval first
     if (timerRef.current) { clearInterval(timerRef.current); timerRef.current = null; }
     sentRef.current  = false;
-    startRef.current = Date.now();          // set BEFORE interval creation
+    startRef.current = Date.now();
     setCallStatus("live");
     setCallTime("0:00");
     setCompletedSteps([]);
@@ -78,8 +78,8 @@ function DashboardPage() {
     setFlags([]);
     setIsAgentSpeaking(false);
     timerRef.current = setInterval(() => {
+      if (startRef.current === null) return;
       const elapsed = Date.now() - startRef.current;
-      if (elapsed < 0) return;             // guard against clock weirdness
       const s = Math.floor(elapsed / 1000);
       setCallTime(`${Math.floor(s / 60)}:${(s % 60).toString().padStart(2, "0")}`);
     }, 500);
@@ -93,7 +93,7 @@ function DashboardPage() {
     if (sentRef.current) return;
     sentRef.current = true;
     if (timerRef.current) clearInterval(timerRef.current);
-    const s = Math.floor((Date.now() - startRef.current) / 1000);
+    const s = startRef.current !== null ? Math.floor((Date.now() - startRef.current) / 1000) : 0;
     const duration = `${Math.floor(s / 60)}:${(s % 60).toString().padStart(2, "0")}`;
     setSessionData({ ...data, callDuration: duration });
     setCallTime(duration);

@@ -121,49 +121,13 @@ export default function Waveform({ isActive, height = 72 }: Props) {
         ctx.stroke();
 
       } else {
-        // ── Simulated fallback (mic unavailable or inactive) ─────────────
-        const target = active ? 28 : 6;
-        currentAmpRef.current += (target - currentAmpRef.current) * 0.04;
-        const amp = currentAmpRef.current;
-        const t   = tRef.current;
-
-        const layers = active ? 2 : 1;
-        for (let l = 0; l < layers; l++) {
-          const phaseOffset = l * 1.4;
-          const layerAmp    = l === 0 ? amp : amp * 0.55;
-          const opacity     = active ? (l === 0 ? 0.85 : 0.35) : 0.45;
-
-          ctx.beginPath();
-          ctx.strokeStyle = active
-            ? `rgba(59, 111, 160, ${opacity})`
-            : `rgba(168, 158, 152, ${opacity})`;
-          ctx.lineWidth = (l === 0 ? 2 : 1.2) * dpr;
-          ctx.lineJoin  = "round";
-
-          const freq  = active ? 0.018 : 0.012;
-          const speed = active ? 0.065 : 0.022;
-
-          for (let px = 0; px <= W; px += 2) {
-            const y =
-              H / 2 +
-              Math.sin(px * freq + t * speed * 60 + phaseOffset) * layerAmp * dpr +
-              Math.sin(px * freq * 2.3 + t * speed * 40) * layerAmp * 0.3 * dpr;
-            px === 0 ? ctx.moveTo(px, y) : ctx.lineTo(px, y);
-          }
-          ctx.stroke();
-        }
-
-        // Faint center line when fully idle
-        if (!active && currentAmpRef.current < 8) {
-          ctx.beginPath();
-          ctx.strokeStyle = "rgba(168, 158, 152, 0.15)";
-          ctx.lineWidth   = 1 * dpr;
-          ctx.moveTo(0, H / 2);
-          ctx.lineTo(W, H / 2);
-          ctx.stroke();
-        }
-
-        tRef.current++;
+        // ── Idle: flat line only, no animation ───────────────────────────
+        ctx.beginPath();
+        ctx.strokeStyle = "rgba(168, 158, 152, 0.3)";
+        ctx.lineWidth   = 1.5 * dpr;
+        ctx.moveTo(0, H / 2);
+        ctx.lineTo(W, H / 2);
+        ctx.stroke();
       }
 
       rafRef.current = requestAnimationFrame(draw);
