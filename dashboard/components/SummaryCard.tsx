@@ -7,6 +7,37 @@ const STEPS: Record<string, string> = {
   open_questions: "Open Questions", closing: "Closing",
 };
 
+// Keywords to detect in patient (PT) lines
+const MED_KEYWORDS    = ["medication", "pill", "tablet", "taking", "dose", "prescription", "medicine"];
+const SYMPTOM_KEYWORDS = ["pain", "fever", "headache", "bleeding", "dizzy", "nausea", "swelling", "breath", "chest", "hurt", "sore", "discomfort"];
+const POSITIVE_KEYWORDS = ["yes", "understand", "got it", "okay", "sure", "will do", "i will", "i'll", "confirmed"];
+
+function parseTranscript(transcript: string): {
+  medLines: string[];
+  symptomLines: string[];
+  keyMoments: string[];
+} {
+  const lines = transcript.split("\n").filter(Boolean);
+  const ptLines = lines.filter((l) => l.startsWith("PT:")).map((l) => l.replace(/^PT:\s*/, "").trim());
+
+  const medLines: string[]     = [];
+  const symptomLines: string[] = [];
+  const keyMoments: string[]   = [];
+
+  ptLines.forEach((line) => {
+    const lower = line.toLowerCase();
+    if (MED_KEYWORDS.some((k) => lower.includes(k))) medLines.push(line);
+    if (SYMPTOM_KEYWORDS.some((k) => lower.includes(k))) symptomLines.push(line);
+    if (POSITIVE_KEYWORDS.some((k) => lower.includes(k)) && line.length < 120) keyMoments.push(line);
+  });
+
+  return {
+    medLines:    medLines.slice(0, 3),
+    symptomLines: symptomLines.slice(0, 3),
+    keyMoments:  keyMoments.slice(0, 2),
+  };
+}
+
 interface Props {
   sessionData: {
     completedSteps: string[];
@@ -17,7 +48,7 @@ interface Props {
 }
 
 export default function SummaryCard({ sessionData }: Props) {
-  const { completedSteps, flaggedWarnings, callDuration } = sessionData;
+  const { completedSteps, flaggedWarnings, callDuration, transcript } = sessionData;
   const total = Object.keys(STEPS).length;
   const comp  = Math.round((completedSteps.length / total) * 100);
   const scoreColor = comp > 80 ? "#16a34a" : comp > 50 ? "#d97706" : "#dc2626";
@@ -96,6 +127,28 @@ export default function SummaryCard({ sessionData }: Props) {
               </div>
             ))}
           </div>
+        </div>
+      )}
+
+      {/* Key patient quotes */}
+      {keyMoments.length > 0 && (
+        <div style={{ background: "#f8faff", border: "1px solid #dde3f5", borderRadius: 8, padding: 12, marginBottom: 14 }}>
+          <div style={{ fontSize: 9, fontWeight: 600, color: "#6b7a9e", fontFamily: "monospace", letterSpacing: "1px", textTransform: "uppercase", marginBottom: 8 }}>Patient Responses</div>
+          {keyMoments.map((q, i) => (
+            <div key={i} style={{ fontSize: 11, color: "#1a2340", padding: "4px 0", borderBottom: "1px solid #e8eeff", fontStyle: "italic" }}>
+              "{q}"
+            </div>
+          ))}
+        </div>
+      )}
+
+      {/* Symptom mentions from transcript */}
+      {symptomLines.length > 0 && (
+        <div style={{ background: "#fffbeb", border: "1px solid #fcd34d", borderRadius: 8, padding: 12, marginBottom: 14 }}>
+          <div style={{ fontSize: 9, fontWeight: 600, color: "#d97706", fontFamily: "monospace", letterSpacing: "1px", textTransform: "uppercase", marginBottom: 8 }}>Symptom Mentions</div>
+          {symptomLines.map((s, i) => (
+            <div key={i} style={{ fontSize: 11, color: "#1a2340", padding: "3px 0" }}>⚡ {s}</div>
+          ))}
         </div>
       )}
 

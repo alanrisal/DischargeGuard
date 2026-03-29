@@ -1,5 +1,6 @@
 "use client";
-import { useState, useRef, useEffect } from "react";
+import { useState, useRef, useEffect, Suspense } from "react";
+import { useSearchParams } from "next/navigation";
 import VoiceAgentPanel from "@/components/VoiceAgentPanel";
 import PatientCard from "@/components/PatientCard";
 import CalendarCard from "@/components/CalendarCard";
@@ -242,5 +243,13 @@ export default function DashboardPage() {
         </div>
       </div>
     </>
+  );
+}
+
+export default function Page() {
+  return (
+    <Suspense>
+      <DashboardPage />
+    </Suspense>
   );
 }

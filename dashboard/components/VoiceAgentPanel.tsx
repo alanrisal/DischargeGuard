@@ -28,16 +28,84 @@ const uppercaseLabelCSS = {
   fontSize: 10, fontWeight: 700, letterSpacing: "0.1em", textTransform: "uppercase" as const, color: "#9ca3af",
 };
 
+// ── Step inference from transcript text (phone mode only) ─────────────────────
+// Ordered from latest to earliest so the first match wins the most-advanced step.
+const STEP_PATTERNS: [WorkflowStepId, string[]][] = [
+  ["closing",               ["take care", "feel better", "goodbye", "good bye", "bye", "call us if", "reach out", "here for you", "well done", "you're all set"]],
+  ["open_questions",        ["any question", "any concern", "anything else", "anything you'd like", "is there anything", "what else"]],
+  ["warning_signs",         ["warning sign", "go to the er", "call 911", "call emergency", "danger sign", "emergency room", "fever above", "chest pain", "shortness of breath", "unusual bleeding", "seek immediate"]],
+  ["follow_ups",            ["follow-up appointment", "follow up appointment", "follow up with", "appointment on", "april", "lab test", "blood test", "clinic visit", "see the doctor"]],
+  ["wound_care",            ["wound", "incision", "bandage", "dressing", "steri-strip", "surgical site", "stitches", "suture"]],
+  ["activity_restrictions", ["no lifting", "no driving", "avoid lifting", "avoid driving", "activity restriction", "no swimming", "no bathing", "when you can exercise", "physical activity"]],
+  ["medications",           ["medication", "medicine", "metformin", "lisinopril", "warfarin", "omeprazole", "pill", "tablet", "dose", "dosage", "prescription", "twice a day", "once a day", "take your"]],
+  ["symptoms",              ["how are you feeling", "any pain", "pain level", "rate your pain", "nausea", "dizziness", "any discomfort", "side effect", "how do you feel"]],
+  ["opening",               ["calling from", "follow-up call", "follow up call", "check in on you", "how are you today", "how are you doing", "hospital"]],
+];
+
+// Patient responses that signal a potential warning
+const WARNING_PATTERNS: [string, "urgent" | "warning"][] = [
+  ["chest pain",            "urgent"],
+  ["can't breathe",         "urgent"],
+  ["cannot breathe",        "urgent"],
+  ["difficulty breathing",  "urgent"],
+  ["shortness of breath",   "urgent"],
+  ["hard to breathe",       "urgent"],
+  ["severe pain",           "urgent"],
+  ["bleeding",              "warning"],
+  ["fever",                 "warning"],
+  ["throwing up",           "warning"],
+  ["vomiting",              "warning"],
+  ["vomit",                 "warning"],
+  ["yellow",                "warning"],
+  ["jaundice",              "warning"],
+  ["swelling",              "warning"],
+  ["confused",              "warning"],
+  ["not taking",            "warning"],
+  ["didn't take",           "warning"],
+  ["forgot",                "warning"],
+];
+
+function inferStepFromText(text: string): WorkflowStepId | null {
+  const lower = text.toLowerCase();
+  for (const [step, keywords] of STEP_PATTERNS) {
+    if (keywords.some((kw) => lower.includes(kw))) return step;
+  }
+  return null;
+}
+
+function inferWarningsFromText(text: string): { sign: string; severity: "urgent" | "warning" }[] {
+  const lower = text.toLowerCase();
+  return WARNING_PATTERNS
+    .filter(([kw]) => lower.includes(kw))
+    .map(([kw, sev]) => ({ sign: kw, severity: sev }));
+}
+
 // ── Inner panel (must live inside ConversationProvider) ───────────────────────
-function VoiceAgentInner({ onCallStart, onCallEnd, onStepUpdate }: {
+function VoiceAgentInner({
+  phoneNumber,
+  onCallStart,
+  onCallEnd,
+  onStepUpdate,
+}: {
+  phoneNumber: string;
   onCallStart?: () => void;
-  onCallEnd?: (data: { completedSteps: string[]; flaggedWarnings: { sign: string; severity: string }[]; transcript: string }) => void;
+  onCallEnd?: (data: {
+    completedSteps: string[];
+    flaggedWarnings: { sign: string; severity: string }[];
+    transcript: string;
+  }) => void;
   onStepUpdate?: (steps: number, warnings: number) => void;
+  patientName?: string;
+  languageCode?: string;
 }) {
+  // ── Browser-WebSocket mode ───────────────────────────────────────────────────
   const {
-    status, isSpeaking,
-    transcript, currentStep, completedSteps, flaggedWarnings,
-    startCall, endCall,
+    status: wsStatus, isSpeaking,
+    transcript: wsTranscript,
+    currentStep: wsCurrentStep,
+    completedSteps: wsCompletedSteps,
+    flaggedWarnings: wsFlaggedWarnings,
+    startCall: wsStartCall, endCall: wsEndCall,
   } = useVoiceAgent();
 
   const [callStatus, setCallStatus] = useState<'idle' | 'active' | 'ended'>('idle');
@@ -177,11 +245,24 @@ function VoiceAgentInner({ onCallStart, onCallEnd, onStepUpdate }: {
   const transcriptRef = useRef<HTMLDivElement>(null);
   const firedRef      = useRef(false);
 
+  const isPhoneMode  = phoneNumber.trim().length > 0;
+
+  // Unified display values — phone mode overrides browser mode
+  const displayTranscript     = isPhoneMode ? phoneTranscript    : wsTranscript;
+  const displayCurrentStep    = isPhoneMode ? phoneCurrentStep   : wsCurrentStep;
+  const displayCompletedSteps = isPhoneMode ? phoneCompletedSteps: wsCompletedSteps;
+  const displayWarnings       = isPhoneMode ? phoneFlaggedWarnings: wsFlaggedWarnings;
+  const displayStatus = isPhoneMode
+    ? (phoneStatus === "calling" ? "connecting" : phoneStatus === "connected" ? "connected" : "disconnected")
+    : wsStatus;
+  const isConnected  = isPhoneMode ? phoneStatus === "connected" : wsStatus === "connected";
+  const isConnecting = isPhoneMode ? phoneStatus === "calling"   : wsStatus === "connecting";
+
+  // Auto-scroll transcript
   useEffect(() => {
-    if (transcriptRef.current) {
+    if (transcriptRef.current)
       transcriptRef.current.scrollTop = transcriptRef.current.scrollHeight;
-    }
-  }, [transcript]);
+  }, [displayTranscript]);
 
   useEffect(() => {
     if (callStatus === "active" && status === "disconnected" && !firedRef.current) {
@@ -190,20 +271,149 @@ function VoiceAgentInner({ onCallStart, onCallEnd, onStepUpdate }: {
       if (timerRef.current) clearInterval(timerRef.current);
       stopAudio();
       onCallEnd?.({
-        completedSteps: completedSteps as unknown as string[],
-        flaggedWarnings,
-        transcript: transcript.map((e) => `${e.role === "agent" ? "ALEX" : "PT"}: ${e.text}`).join("\n"),
+        completedSteps: wsCompletedSteps as unknown as string[],
+        flaggedWarnings: wsFlaggedWarnings,
+        transcript: wsTranscript.map((e) => `${e.role === "agent" ? "ALEX" : "PT"}: ${e.text}`).join("\n"),
       });
     }
-    if (status === "connected") {
-      firedRef.current = false; // reset for next call
-    }
-  }, [status]); // eslint-disable-line react-hooks/exhaustive-deps
+    if (wsStatus === "connected") firedRef.current = false;
+  }, [wsStatus]); // eslint-disable-line react-hooks/exhaustive-deps
 
-  // Notify parent of live metric updates
+  // ── Live metric updates for parent ──────────────────────────────────────────
   useEffect(() => {
-    onStepUpdate?.(completedSteps.length, flaggedWarnings.length);
-  }, [completedSteps.length, flaggedWarnings.length, onStepUpdate]);
+    if (!isPhoneMode)
+      onStepUpdate?.(wsCompletedSteps.length, wsFlaggedWarnings.length);
+  }, [wsCompletedSteps.length, wsFlaggedWarnings.length, onStepUpdate, isPhoneMode]);
+
+  useEffect(() => {
+    if (isPhoneMode)
+      onStepUpdate?.(phoneCompletedSteps.length, phoneFlaggedWarnings.length);
+  }, [phoneCompletedSteps.length, phoneFlaggedWarnings.length, onStepUpdate, isPhoneMode]);
+
+  // ── Phone mode: infer step + warnings from a new transcript entry ────────────
+  function processPhoneEntry(entry: TranscriptEntry) {
+    // Step inference — only from agent turns (agent drives the workflow)
+    if (entry.role === "agent") {
+      const inferred = inferStepFromText(entry.text);
+      if (inferred && !phoneCompletedRef.current.includes(inferred)) {
+        // Complete the previous step when we advance to a new one
+        const prev = phoneCurrentStepRef.current;
+        if (prev && prev !== inferred && !phoneCompletedRef.current.includes(prev)) {
+          phoneCompletedRef.current = [...phoneCompletedRef.current, prev];
+          setPhoneCompletedSteps([...phoneCompletedRef.current]);
+        }
+        phoneCurrentStepRef.current = inferred;
+        setPhoneCurrentStep(inferred);
+      }
+    }
+
+    // Warning detection — from patient turns (patient reports symptoms)
+    if (entry.role === "user") {
+      const newWarnings = inferWarningsFromText(entry.text).filter(
+        (w) => !phoneFlaggedRef.current.some((existing) => existing.sign === w.sign)
+      );
+      if (newWarnings.length > 0) {
+        const withIds: FlaggedWarning[] = newWarnings.map((w) => ({
+          id: Date.now() + Math.random(),
+          ...w,
+        }));
+        phoneFlaggedRef.current = [...phoneFlaggedRef.current, ...withIds];
+        setPhoneFlaggedWarnings([...phoneFlaggedRef.current]);
+      }
+    }
+  }
+
+  // ── Session-state polling (reads KV written by agent webhooks) ──────────────
+  // Gives us live checkpoint updates during phone calls where ElevenLabs
+  // doesn't stream transcript per-turn (Twilio limitation).
+  function startSessionPolling(conversationId: string) {
+    if (sessionPollRef.current) clearInterval(sessionPollRef.current);
+    sessionPollRef.current = setInterval(async () => {
+      try {
+        const r = await fetch(`/api/session-state?conversation_id=${conversationId}`);
+        const d = await r.json();
+        if (!d.found) return;
+
+        // Webhook-reported step takes priority over transcript inference
+        if (d.currentStep && d.currentStep !== phoneCurrentStepRef.current) {
+          const incoming = d.currentStep as WorkflowStepId;
+          // Complete the previous step if we've moved on
+          const prev = phoneCurrentStepRef.current;
+          if (prev && !phoneCompletedRef.current.includes(prev)) {
+            phoneCompletedRef.current = [...phoneCompletedRef.current, prev];
+            setPhoneCompletedSteps([...phoneCompletedRef.current]);
+          }
+          phoneCurrentStepRef.current = incoming;
+          setPhoneCurrentStep(incoming);
+        }
+
+        // Merge KV warnings (agent called flag_warning_sign webhook)
+        if (Array.isArray(d.flaggedWarnings) && d.flaggedWarnings.length > 0) {
+          const newW = (d.flaggedWarnings as { sign: string; severity: string }[]).filter(
+            (w) => !phoneFlaggedRef.current.some((e) => e.sign === w.sign)
+          );
+          if (newW.length > 0) {
+            const withIds: FlaggedWarning[] = newW.map((w) => ({
+              id: Date.now() + Math.random(),
+              sign: w.sign,
+              severity: (w.severity === "urgent" ? "urgent" : "warning") as "urgent" | "warning",
+            }));
+            phoneFlaggedRef.current = [...phoneFlaggedRef.current, ...withIds];
+            setPhoneFlaggedWarnings([...phoneFlaggedRef.current]);
+          }
+        }
+      } catch { /* silent — network blip, keep polling */ }
+    }, 2000);
+  }
+
+  function stopSessionPolling() {
+    if (sessionPollRef.current) { clearInterval(sessionPollRef.current); sessionPollRef.current = null; }
+  }
+
+  // ── Phone call start ─────────────────────────────────────────────────────────
+  async function startPhoneCall() {
+    // Reset all phone-mode state
+    phoneTxRef.current          = [];
+    phoneCompletedRef.current   = [];
+    phoneFlaggedRef.current     = [];
+    phoneCurrentStepRef.current = null;
+    setPhoneStatus("calling");
+    setPhoneTranscript([]);
+    setPhoneError(null);
+    setConvStatus("");
+    setPhoneCurrentStep(null);
+    setPhoneCompletedSteps([]);
+    setPhoneFlaggedWarnings([]);
+    firedRef.current = false;
+    onCallStart?.();
+
+    try {
+      const res = await fetch("/api/outbound-call", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ phoneNumber: phoneNumber.trim() }),
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error ?? "Failed to start call");
+
+      // Robustly extract conversation ID regardless of casing
+      const conversationId: string = data.conversation_id ?? data.conversationId ?? "";
+      if (!conversationId) throw new Error("ElevenLabs did not return a conversation_id");
+
+      setPhoneStatus("connected");
+
+      // Start polling KV session state so checkpoints update live during the call.
+      // (ElevenLabs doesn't stream per-turn transcript for Twilio calls.)
+      startSessionPolling(conversationId);
+
+      const es = new EventSource(`/api/conversation-stream?conversationId=${conversationId}`);
+      esRef.current = es;
+
+      es.onmessage = (evt) => {
+        const msg = JSON.parse(evt.data);
+
+        if (msg.type === "status") {
+          setConvStatus(msg.convStatus);
 
   const connecting = status === "connecting";
   const compScore = Math.round((completedSteps.length / 9) * 100);
@@ -319,7 +529,7 @@ function VoiceAgentInner({ onCallStart, onCallEnd, onStepUpdate }: {
                 {callStatus === 'active' ? "Listening…" : "Start a call to see the live transcript."}
               </p>
             ) : (
-              transcript.map((entry) => (
+              displayTranscript.map((entry) => (
                 <div key={entry.id} style={{ display: "flex", gap: 6, alignItems: "flex-start" }}>
                   <span style={{ fontSize: 11, fontWeight: 700, color: entry.role === "agent" ? C.accent : C.green, paddingTop: 2, flexShrink: 0, width: 34 }}>
                     {entry.role === "agent" ? "ALEX" : "PT"}
@@ -481,15 +691,34 @@ function StatusDot({ callStatus }: { callStatus: 'idle' | 'active' | 'ended' }) 
   );
 }
 
-// ── Public export: wraps inner with required ConversationProvider ─────────────
-export default function VoiceAgentPanel({ onCallStart, onCallEnd, onStepUpdate }: {
+// ── Public export ─────────────────────────────────────────────────────────────
+export default function VoiceAgentPanel({
+  onCallStart, onCallEnd, onStepUpdate,
+}: {
   onCallStart?: () => void;
   onCallEnd?: (data: { completedSteps: string[]; flaggedWarnings: { sign: string; severity: string }[]; transcript: string }) => void;
   onStepUpdate?: (steps: number, warnings: number) => void;
+  patientName?: string;
+  languageCode?: string;
 }) {
+  const [phoneNumber, setPhoneNumber] = useState("");
+
   return (
     <ConversationProvider>
-      <VoiceAgentInner onCallStart={onCallStart} onCallEnd={onCallEnd} onStepUpdate={onStepUpdate} />
+      <div style={{ display: "flex", flexDirection: "column", gap: 4, marginBottom: 4 }}>
+        <label style={{ fontSize: 10, fontWeight: 600, color: "#6b7a9e", letterSpacing: "0.6px", textTransform: "uppercase", fontFamily: "'Outfit', system-ui, sans-serif" }}>
+          Outbound Phone Number
+          <span style={{ fontWeight: 400, fontSize: 9, marginLeft: 6 }}>(leave blank to use browser mic)</span>
+        </label>
+        <input
+          type="tel"
+          placeholder="+1 (555) 000-0000"
+          value={phoneNumber}
+          onChange={(e) => setPhoneNumber(e.target.value)}
+          style={{ padding: "7px 10px", borderRadius: 8, border: "1px solid #dde3f5", fontSize: 12, fontFamily: "monospace", color: "#1a2340", background: "#fff", outline: "none", width: "100%", boxSizing: "border-box" }}
+        />
+      </div>
+      <VoiceAgentInner phoneNumber={phoneNumber} onCallStart={onCallStart} onCallEnd={onCallEnd} onStepUpdate={onStepUpdate} />
     </ConversationProvider>
   );
 }

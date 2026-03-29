@@ -55,4 +55,5 @@ dashboard.zip
 
 # ── Kiro / Claude internal worktrees ──────────────────────────
 .claude/
+
 .env.example

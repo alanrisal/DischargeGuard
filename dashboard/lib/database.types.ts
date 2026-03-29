@@ -17,6 +17,7 @@ export interface Database {
         };
         Insert: Omit<Database["public"]["Tables"]["patients"]["Row"], "id" | "created_at">;
         Update: Partial<Database["public"]["Tables"]["patients"]["Insert"]>;
+        Relationships: [];
       };
       prescriptions: {
         Row: {
@@ -32,6 +33,7 @@ export interface Database {
         };
         Insert: Omit<Database["public"]["Tables"]["prescriptions"]["Row"], "id" | "created_at">;
         Update: Partial<Database["public"]["Tables"]["prescriptions"]["Insert"]>;
+        Relationships: [];
       };
       visits: {
         Row: {
@@ -46,6 +48,7 @@ export interface Database {
         };
         Insert: Omit<Database["public"]["Tables"]["visits"]["Row"], "id" | "created_at">;
         Update: Partial<Database["public"]["Tables"]["visits"]["Insert"]>;
+        Relationships: [];
       };
       call_history: {
         Row: {
@@ -66,6 +69,7 @@ export interface Database {
         };
         Insert: Omit<Database["public"]["Tables"]["call_history"]["Row"], "id" | "created_at">;
         Update: Partial<Database["public"]["Tables"]["call_history"]["Insert"]>;
+        Relationships: [];
       };
       discharge_checklists: {
         Row: {
@@ -79,7 +83,12 @@ export interface Database {
         };
         Insert: Omit<Database["public"]["Tables"]["discharge_checklists"]["Row"], "id" | "created_at">;
         Update: Partial<Database["public"]["Tables"]["discharge_checklists"]["Insert"]>;
+        Relationships: [];
       };
     };
+    Views: Record<string, never>;
+    Functions: Record<string, never>;
+    Enums: Record<string, never>;
+    CompositeTypes: Record<string, never>;
   };
 }

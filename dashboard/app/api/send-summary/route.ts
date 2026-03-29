@@ -49,7 +49,7 @@ export async function POST(req: NextRequest) {
     if (completedSteps.includes("warning_signs")) {
       highlights.push("⚠️ Warning signs reviewed with patient");
     }
-    flaggedWarnings.forEach((w) => {
+    flaggedWarnings.forEach((w: { sign: string; severity: string }) => {
       highlights.push(`${w.severity === "urgent" ? "🚨" : "⚠️"} Concerning symptom flagged: ${w.sign}`);
     });
     if (greenCount === totalItems) {
@@ -152,6 +152,44 @@ export async function POST(req: NextRequest) {
       subject: `📋 Call Summary — ${patientName} · ${comprehension}% comprehension`,
       html,
     });
+
+    // ── Save to Supabase call_history ───────────────────────────
+    try {
+      const { createClient } = await import("@supabase/supabase-js");
+      const supabase = createClient(
+        process.env.NEXT_PUBLIC_SUPABASE_URL!,
+        process.env.SUPABASE_SERVICE_ROLE_KEY!
+      );
+      const patientMrn = body.patientMrn;
+      if (patientMrn) {
+        const { data: patient } = await supabase
+          .from("patients").select("id").eq("mrn", patientMrn).single();
+        if (patient) {
+          const now = new Date();
+          await supabase.from("call_history").insert({
+            patient_id:          patient.id,
+            date:                now.toISOString().split("T")[0],
+            time:                now.toLocaleTimeString("en-US", { hour: "2-digit", minute: "2-digit" }),
+            duration:            callTime,
+            type:                "Post-discharge",
+            status:              "completed",
+            agent:               "ElevenLabs VoiceCoach",
+            language_code:       body.languageCode ?? "en",
+            comprehension_score: comprehension,
+            flags:               (flaggedWarnings as { sign: string }[]).map((w) => w.sign),
+            summary:             (completedSteps as string[]).includes("medications")
+              ? "Medications reviewed. "
+              : ("Medications not completed. " +
+                ((flaggedWarnings as { sign: string }[]).length > 0
+                  ? `${(flaggedWarnings as { sign: string }[]).length} concern(s) flagged.`
+                  : "No concerns flagged.")),
+            elevenlabs_conversation_id: body.conversationId ?? null,
+          });
+        }
+      }
+    } catch (dbErr: any) {
+      console.warn("[send-summary] Supabase save failed:", dbErr?.message);
+    }
 
     return NextResponse.json({ status: "ok" });
   } catch (err: any) {
