@@ -2,37 +2,34 @@
 import { useState, useRef, useEffect, Suspense } from "react";
 import { useSearchParams } from "next/navigation";
 import VoiceAgentPanel from "@/components/VoiceAgentPanel";
-import SummaryCard from "@/components/SummaryCard";
-import AgentGraph from "@/components/AgentGraph";
-import AlertPanel from "@/components/AlertPanel";
+import PatientCard from "@/components/PatientCard";
+import CalendarCard from "@/components/CalendarCard";
 import PatientHistory from "@/components/PatientHistory";
-import Link from "next/link";
-
-const B = {
-  accent: "#2563eb", surface: "#f8faff", surfaceD: "#f0f4ff",
-  border: "#dde3f5", text: "#1a2340", muted: "#6b7a9e",
-  green: "#16a34a", red: "#dc2626",
-};
+import { Settings, Bell } from "lucide-react";
 
 type CallStatus = "idle" | "live" | "done";
 
-function DashboardPage() {
-  const searchParams = useSearchParams();
-  const scenarioMrn  = searchParams.get("scenario") ?? "847291";
+function ShieldLogo({ width = 38, height = 38 }: { width?: number; height?: number }) {
+  return (
+    <svg width={width} height={height} viewBox="0 0 120 120" fill="none" xmlns="http://www.w3.org/2000/svg">
+      <path d="M28 75 Q14 75 14 60 Q14 48 24 48" stroke="#0f4c54" strokeWidth="6" strokeLinecap="round" fill="none"/>
+      <path d="M92 75 Q106 75 106 60 Q106 48 96 48" stroke="#0f4c54" strokeWidth="6" strokeLinecap="round" fill="none"/>
+      <path d="M24 48 Q24 85 60 85 Q96 85 96 48" stroke="#0f4c54" strokeWidth="6" strokeLinecap="round" fill="none"/>
+      <circle cx="28" cy="75" r="5" fill="#0f4c54"/>
+      <circle cx="92" cy="75" r="5" fill="#0f4c54"/>
+      <path d="M60 8 L88 20 L88 52 Q88 78 60 92 Q32 78 32 52 L32 20 Z" fill="white" stroke="#0f4c54" strokeWidth="6" strokeLinejoin="round"/>
+      <path d="M60 8 L60 92 Q32 78 32 52 L32 20 Z" fill="#1a8a2e"/>
+      <line x1="60" y1="9" x2="60" y2="91" stroke="white" strokeWidth="3"/>
+      <path d="M60 8 L88 20 L88 52 Q88 78 60 92 Q32 78 32 52 L32 20 Z" fill="none" stroke="#0f4c54" strokeWidth="6" strokeLinejoin="round"/>
+    </svg>
+  );
+}
 
-  const [patient, setPatient] = useState<{ name: string; mrn: string; diagnosis: string; language: string; language_code: string } | null>(null);
-
-  // Fetch patient from Supabase by MRN
-  useEffect(() => {
-    fetch(`/api/patient?mrn=${scenarioMrn}`)
-      .then((r) => r.json())
-      .then((d) => { if (d.patient) setPatient(d.patient); })
-      .catch(() => {}); // silently fall back to hardcoded
-  }, [scenarioMrn]);
-  const [callStatus, setCallStatus]   = useState<CallStatus>("idle");
-  const [callTime, setCallTime]       = useState("0:00");
+export default function DashboardPage() {
+  const [callStatus, setCallStatus] = useState<CallStatus>("idle");
+  const [callTime, setCallTime] = useState("0:00");
   const [completedSteps, setCompletedSteps] = useState(0);
-  const [warnings, setWarnings]       = useState(0);
+  const [warnings, setWarnings] = useState(0);
   const [sessionData, setSessionData] = useState<{
     completedSteps: string[];
     flaggedWarnings: { sign: string; severity: string }[];
@@ -40,11 +37,10 @@ function DashboardPage() {
     callDuration: string;
   } | null>(null);
 
-  const timerRef    = useRef<ReturnType<typeof setInterval> | null>(null);
-  const startRef    = useRef<number>(0);
-  const sentRef     = useRef(false);
+  const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  const startRef = useRef<number>(0);
+  const sentRef = useRef(false);
 
-  // Start timer when call goes live
   const handleCallStart = () => {
     sentRef.current = false;
     setCallStatus("live");
@@ -60,7 +56,6 @@ function DashboardPage() {
     }, 500);
   };
 
-  // Called when ElevenLabs session ends
   const handleCallEnd = (data: {
     completedSteps: string[];
     flaggedWarnings: { sign: string; severity: string }[];
@@ -85,133 +80,169 @@ function DashboardPage() {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
-        patientName:     patient?.name ?? "Maria Garcia",
-        patientMrn:      patient?.mrn ?? scenarioMrn,
-        languageCode:    patient?.language_code ?? "es",
-        callTime:        duration,
-        comprehension:   comp,
-        greenCount:      data.completedSteps.length,
-        totalItems:      9,
-        alerts:          [],
-        transcript:      data.transcript,
-        completedSteps:  data.completedSteps,
+        patientName: "Maria Garcia",
+        callTime: duration,
+        comprehension: comp,
+        greenCount: data.completedSteps.length,
+        totalItems: 9,
+        alerts: [],
+        transcript: data.transcript,
+        completedSteps: data.completedSteps,
         flaggedWarnings: data.flaggedWarnings,
-        items:           {},
+        items: {},
       }),
-    }).then((r) => r.json())
-      .then((d) => { if (d.status === "ok") console.log("[send-summary] ✓ Email sent"); })
+    })
+      .then((r) => r.json())
+      .then((d) => {
+        if (d.status === "ok") console.log("[send-summary] ✓ Email sent");
+      })
       .catch(console.error);
   };
 
-  // Update live metrics from VoiceAgentPanel
   const handleStepUpdate = (steps: number, warns: number) => {
     setCompletedSteps(steps);
     setWarnings(warns);
   };
 
-  useEffect(() => () => { if (timerRef.current) clearInterval(timerRef.current); }, []);
+  useEffect(() => () => {
+    if (timerRef.current) clearInterval(timerRef.current);
+  }, []);
 
   const comp = Math.round((completedSteps / 9) * 100);
+  const [navSelected, setNavSelected] = useState<"dashboard" | "patients" | "settings">("dashboard");
 
   return (
-    <div style={{ height: "100vh", display: "flex", flexDirection: "column", background: B.surface, color: B.text, fontFamily: "'Outfit', system-ui, sans-serif", overflow: "hidden" }}>
-
-      {/* Header */}
-      <div style={{ background: "#fff", borderBottom: `1px solid ${B.border}`, padding: "10px 20px", display: "flex", alignItems: "center", gap: 16, flexShrink: 0, boxShadow: "0 1px 4px rgba(37,99,235,0.06)" }}>
-        <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-          <img src="/logo.png" alt="DischargeGuard" style={{ width: 32, height: 32, objectFit: "contain" }} />
-          <span style={{ fontWeight: 700, fontSize: 15, letterSpacing: "-0.3px", color: B.text }}>
-            Discharge<span style={{ color: B.accent }}>Guard</span>
-          </span>
-        </div>
-
-        <div style={{ width: 1, height: 28, background: B.border }} />
-
-        <div>
-          <div style={{ fontWeight: 700, fontSize: 14, color: B.text }}>{patient?.name ?? "Maria Garcia"}</div>
-          <div style={{ display: "flex", gap: 5, marginTop: 3 }}>
-            {[`MRN ${patient?.mrn ?? "847291"}`, patient?.diagnosis?.split(",")[0] ?? "Post-cholecystectomy"].map((t) => (
-              <span key={t} style={{ background: B.surfaceD, border: `1px solid ${B.border}`, borderRadius: 20, padding: "1px 8px", fontSize: 9, color: B.muted, fontFamily: "monospace" }}>{t}</span>
-            ))}
-            <span style={{ background: "#dcfce7", border: "1px solid #86efac", borderRadius: 20, padding: "1px 8px", fontSize: 9, color: "#15803d", fontFamily: "monospace" }}>
-              {patient?.language_code?.toUpperCase() ?? "ES"} · {patient?.language ?? "Spanish"}
-            </span>
-          </div>
-        </div>
-
-        <div style={{ flex: 1 }} />
-
-        {/* Live metrics */}
-        <div style={{ display: "flex", gap: 8 }}>
-          {[
-            { val: callTime,              label: "Call Time",    color: callStatus === "live" ? B.accent : B.muted },
-            { val: `${completedSteps}/9`, label: "Steps Done",   color: B.green },
-            { val: warnings,              label: "Warnings",     color: warnings > 0 ? B.red : B.muted },
-            { val: `${comp}%`,            label: "Comprehension",color: comp > 80 ? B.green : comp > 50 ? "#d97706" : comp > 0 ? B.red : B.muted },
-          ].map(({ val, label, color }) => (
-            <div key={label} style={{ background: B.surfaceD, border: `1px solid ${B.border}`, borderRadius: 9, padding: "5px 12px", textAlign: "center", minWidth: 58 }}>
-              <div style={{ fontSize: 16, fontWeight: 700, fontFamily: "monospace", color, lineHeight: 1 }}>{val}</div>
-              <div style={{ fontSize: 8, color: B.muted, marginTop: 2, fontFamily: "monospace" }}>{label}</div>
-            </div>
-          ))}
-        </div>
-
-        <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-          {callStatus === "live" && (
-            <div style={{ display: "flex", alignItems: "center", gap: 5, fontSize: 10, fontWeight: 600, color: B.green, fontFamily: "monospace" }}>
-              <div style={{ width: 6, height: 6, background: B.green, borderRadius: "50%", animation: "pulse 1.2s ease-in-out infinite" }} />
-              LIVE
-            </div>
-          )}
-          {callStatus === "done" && <div style={{ fontSize: 10, fontWeight: 600, color: B.green, fontFamily: "monospace" }}>✓ COMPLETE</div>}
-          {callStatus === "idle" && <div style={{ fontSize: 10, color: B.muted, fontFamily: "monospace" }}>● STANDBY</div>}
-          <Link href="/" style={{ fontSize: 10, padding: "4px 10px", borderRadius: 7, background: B.surfaceD, border: `1px solid ${B.border}`, color: B.muted, textDecoration: "none" }}>← Back</Link>
-        </div>
-      </div>
-
-      {/* Body */}
-      <div style={{ flex: 1, display: "flex", overflow: "hidden" }}>
-
-        {/* LEFT */}
-        <div style={{ width: 280, flexShrink: 0, borderRight: `1px solid ${B.border}`, padding: 16, overflow: "hidden", display: "flex", flexDirection: "column", background: "#fff" }}>
-          <PatientHistory />
-        </div>
-
-        {/* CENTER */}
-        <div style={{ flex: 1, overflowY: "auto", padding: 20, display: "flex", flexDirection: "column", gap: 18, borderRight: `1px solid ${B.border}` }}>
-          <VoiceAgentPanel
-            onCallStart={handleCallStart}
-            onCallEnd={handleCallEnd}
-            onStepUpdate={handleStepUpdate}
-            patientName={patient?.name}
-            languageCode={patient?.language_code}
-          />
-          <div style={{ height: 1, background: B.border, flexShrink: 0 }} />
-          {callStatus === "done" && sessionData ? (
-            <SummaryCard sessionData={sessionData} />
-          ) : (
-            <div style={{ background: "#f8faff", border: "1px solid #dde3f5", borderRadius: 10, padding: 20, textAlign: "center", color: B.muted, fontSize: 12, fontFamily: "monospace" }}>
-              {callStatus === "live" ? "Call in progress — summary will appear here when the call ends" : "Start a call to see the session summary"}
-            </div>
-          )}
-        </div>
-
-        {/* RIGHT */}
-        <div style={{ width: 300, flexShrink: 0, display: "flex", flexDirection: "column", overflow: "hidden", background: "#fff" }}>
-          <div style={{ flex: 1, borderBottom: `1px solid ${B.border}`, padding: 16, overflow: "hidden" }}>
-            <AgentGraph particles={[]} a2aMsgs={[]} />
-          </div>
-          <div style={{ flex: 1, padding: 16, overflow: "hidden" }}>
-            <AlertPanel alerts={[]} phase={callStatus === "done" ? "done" : callStatus === "live" ? "running" : "idle"} onReset={() => { setCallStatus("idle"); setSessionData(null); setCallTime("0:00"); setCompletedSteps(0); setWarnings(0); sentRef.current = false; }} />
-          </div>
-        </div>
-      </div>
-
+    <>
       <style>{`
-        @import url('https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&display=swap');
-        @keyframes pulse { 0%,100%{opacity:1;transform:scale(1)} 50%{opacity:.4;transform:scale(.7)} }
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
+        html, body {
+          background: #e8eaf0 !important;
+          margin: 0;
+          padding: 0;
+          font-family: 'Inter', sans-serif !important;
+        }
+        * {
+          box-sizing: border-box;
+          font-family: 'Inter', sans-serif;
+        }
+        @media (prefers-reduced-motion: reduce) {
+          * { animation: none !important; transition: none !important; }
+        }
       `}</style>
-    </div>
+      
+      <div style={{
+        background: "linear-gradient(145deg, #eef1f8 0%, #e8edf8 40%, #dde4f5 100%)",
+        borderRadius: 24, padding: 0,
+        width: "calc(100vw - 48px)", height: "calc(100vh - 48px)",
+        margin: "24px auto", overflow: "hidden",
+        display: "flex", flexDirection: "column",
+        boxShadow: "0 20px 60px rgba(0,0,0,0.12)"
+      }}>
+        
+        {/* Top Navbar */}
+        <div style={{ height: 64, padding: "0 28px", display: "flex", alignItems: "center", gap: 16, background: "transparent", flexShrink: 0 }}>
+          <div style={{ flexShrink: 0, display: "flex", alignItems: "center" }}>
+            <ShieldLogo width={38} height={38} />
+          </div>
+          
+          <div style={{ display: "flex", alignItems: "center", gap: 8, marginLeft: 10 }}>
+            <button onClick={() => setNavSelected("dashboard")} style={{
+              background: navSelected === "dashboard" ? "#1a1a2e" : "transparent",
+              color: navSelected === "dashboard" ? "#ffffff" : "#4b5563",
+              borderRadius: 999, padding: "8px 20px", fontSize: 14,
+              fontWeight: navSelected === "dashboard" ? 600 : 500,
+              border: "none", cursor: "pointer", transition: "all 0.2s ease"
+            }}>Dashboard</button>
+            <button onClick={() => setNavSelected("patients")} style={{
+              background: navSelected === "patients" ? "#1a1a2e" : "transparent",
+              color: navSelected === "patients" ? "#ffffff" : "#4b5563",
+              borderRadius: 999, padding: "8px 20px", fontSize: 14,
+              fontWeight: navSelected === "patients" ? 600 : 500,
+              border: "none", cursor: "pointer", transition: "all 0.2s ease"
+            }}>Patients</button>
+            <button onClick={() => setNavSelected("settings")} style={{
+              background: navSelected === "settings" ? "#1a1a2e" : "transparent",
+              color: navSelected === "settings" ? "#ffffff" : "#4b5563",
+              borderRadius: 999, padding: "8px 20px", fontSize: 14,
+              fontWeight: navSelected === "settings" ? 600 : 500,
+              border: "none", cursor: "pointer", transition: "all 0.2s ease"
+            }}>Settings</button>
+          </div>
+
+          <div style={{ marginLeft: "auto", display: "flex", alignItems: "center", gap: 12 }}>
+            <button style={{
+              display: "flex", alignItems: "center", gap: 6,
+              background: "rgba(255,255,255,0.7)", borderRadius: 999,
+              padding: "8px 16px", border: "none", cursor: "pointer",
+              fontSize: 13, fontWeight: 500, color: "#374151",
+              boxShadow: "0 2px 8px rgba(0,0,0,0.08)", transition: "all 0.2s ease"
+            }}>
+              <Settings size={16} color="#374151" />
+              Settings
+            </button>
+            
+            <button style={{
+              width: 38, height: 38, borderRadius: 999,
+              background: "rgba(255,255,255,0.7)", border: "none", cursor: "pointer",
+              display: "flex", alignItems: "center", justifyContent: "center",
+              boxShadow: "0 2px 8px rgba(0,0,0,0.08)", transition: "all 0.2s ease"
+            }}>
+              <Bell size={18} color="#374151" />
+            </button>
+            
+            <div style={{
+              width: 38, height: 38, borderRadius: "50%",
+              background: "#0d9488", color: "white",
+              fontSize: 14, fontWeight: 700,
+              display: "flex", alignItems: "center", justifyContent: "center",
+              border: "2px solid white", boxShadow: "0 2px 8px rgba(0,0,0,0.15)"
+            }}>
+              MG
+            </div>
+          </div>
+        </div>
+
+        {/* Page Title */}
+        <div style={{ paddingTop: 40, paddingBottom: 36, paddingLeft: 28, paddingRight: 28, marginBottom: 0, flexShrink: 0 }}>
+          <h1 style={{ fontSize: 36, fontWeight: 700, lineHeight: 1.2, color: "#1a1a2e", margin: 0 }}>
+            Welcome back, <span style={{ color: "#0d9488" }}>Maria Garcia</span>
+          </h1>
+        </div>
+
+        {/* Main Grid Content */}
+        <div style={{
+          display: "grid", gridTemplateColumns: "280px 1fr 1fr 300px", gridTemplateRows: "minmax(0, 1fr)",
+          gap: 16, padding: "0 28px 28px", flex: 1, minHeight: 0, overflow: "hidden", height: "auto"
+        }}>
+          
+          {/* Column 1: Patient Profile */}
+          <div style={{ display: "flex", flexDirection: "column", gap: 16, height: "100%", overflow: "hidden" }}>
+            <div style={{ flexShrink: 0 }}><PatientCard compScore={comp} /></div>
+            <div style={{ flex: 1, minHeight: 0, display: "flex", flexDirection: "column" }}><CalendarCard /></div>
+          </div>
+
+          {/* Columns 2-3: Voice Agent Panel */}
+          <div style={{ gridColumn: "span 2", display: "flex", flexDirection: "column", gap: 16, height: "100%", minHeight: 0, overflow: "hidden" }}>
+            <VoiceAgentPanel
+              onCallStart={handleCallStart}
+              onCallEnd={handleCallEnd}
+              onStepUpdate={handleStepUpdate}
+            />
+          </div>
+
+          {/* Column 4: Medications Panel */}
+          <div style={{ display: "flex", flexDirection: "column", height: "100%", minHeight: 0, overflow: "hidden" }}>
+            <PatientHistory
+              callTime={callTime}
+              stepsDone={completedSteps}
+              comprehension={comp}
+              warnings={warnings}
+            />
+          </div>
+          
+        </div>
+      </div>
+    </>
   );
 }
 
