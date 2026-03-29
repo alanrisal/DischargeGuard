@@ -40,16 +40,8 @@ export const CHECKLIST_JAMES: ChecklistItem[] = [
 ];
 
 export const SUBTITLES = [
-  { t: 1.5, es: "Hola, señora García. Le llama el hospital para ver cómo se encuentra.", en: "Hi Maria, this is Bella from Riverside General Hospital." },
-  { t: 3, es: "", en: "We like to call folks after they head home just to make sure everything's going smoothly." },
-  { t: 4, es: "", en: "How have you been feeling since you got back? [warmly]" },
-  { t: 5.5, es: "", en: "Patient: \"I've been feeling a little better.\"" },
-  {
-    t: 6,
-    es: "",
-    en: "That's good to hear, Maria. A little better each day is exactly what we want to see. How are you managing with the pain from the surgery?",
-  },
-  { t: 8, es: "Primero, hablemos de sus medicamentos. ¿Ha podido tomar la metformina?", en: "First, let's talk about your medications. Have you been able to take metformin?" },
+  { t: 1.5, es: "Hola, señora García. Le llama el hospital para ver cómo se encuentra.", en: "Hello, Mrs. García. The hospital is calling to see how you're doing." },
+  { t: 5,   es: "Primero, hablemos de sus medicamentos. ¿Ha podido tomar la metformina?", en: "First, let's talk about your medications. Have you been able to take metformin?" },
   { t: 10,  es: "Paciente: \"Creo que es la pastilla azul... ¿para la presión?\"", en: "Patient: \"I think it's the blue pill... for blood pressure?\"" },
   { t: 14,  es: "Entiendo, permítame explicarle mejor. La metformina es para la diabetes, no para la presión arterial.", en: "I understand, let me explain better. Metformin is for diabetes, not blood pressure." },
   { t: 19,  es: "Paciente: \"Ah sí, ahora entiendo. La tomo dos veces al día con las comidas.\"", en: "Patient: \"Ah yes, I understand now. I take it twice a day with meals.\"" },
@@ -64,7 +56,6 @@ export const SUBTITLES = [
   { t: 62,  es: "Ha sido un placer. Una enfermera la llamará pronto. ¡Cuídese mucho!", en: "It's been a pleasure. A nurse will call you soon. Take good care!" },
 ];
 
-/** English demo transcript for /my-care/wei semantic timeline (no Supabase yet). */
 export const SUBTITLES_WEI = [
   { en: "Hi Wei, this is Bella from Riverside General Hospital cardiac care." },
   { en: "We're checking in after your stent procedure — how are you feeling today?" },

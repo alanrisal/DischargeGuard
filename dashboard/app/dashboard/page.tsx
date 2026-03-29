@@ -8,6 +8,7 @@ import Waveform from "@/components/dashboard/Waveform";
 import RadialSpoke from "@/components/dashboard/RadialSpoke";
 import ComprehensionTranscript from "@/components/dashboard/ComprehensionTranscript";
 import MedChecklist from "@/components/dashboard/MedChecklist";
+import { CLINICAL_SCENARIO_STORAGE_KEY, isClinicalScenarioId } from "@/lib/clinicalSession";
 import { getScenario } from "@/lib/scenarioData";
 import type { TranscriptEntry } from "@/lib/useVoiceAgent";
 
@@ -39,6 +40,15 @@ function DashboardPage() {
       .catch(() => {});
   }, [lookupMrn]);
 
+  useEffect(() => {
+    if (!isClinicalScenarioId(scenarioParam)) return;
+    try {
+      localStorage.setItem(CLINICAL_SCENARIO_STORAGE_KEY, scenarioParam);
+    } catch {
+      /* ignore */
+    }
+  }, [scenarioParam]);
+
   const [callStatus,      setCallStatus]      = useState<CallStatus>("idle");
   const [callTime,        setCallTime]        = useState("0:00");
   const [completedSteps,  setCompletedSteps]  = useState<string[]>([]);
@@ -63,6 +73,10 @@ function DashboardPage() {
   const displayLangCode  = patient?.language_code   ?? scenarioFallback.language_code;
   const displayLang      = patient?.language        ?? scenarioFallback.language;
   const initials         = displayName.split(" ").map((n: string) => n[0]).join("").toUpperCase().slice(0, 2);
+  const [photoExt,    setPhotoExt]    = useState<"jpg"|"png">("jpg");
+  const [photoFailed, setPhotoFailed] = useState(false);
+  const photoSrc = `${process.env.NEXT_PUBLIC_SUPABASE_URL}/storage/v1/object/public/patient-photos/${displayMrn}.${photoExt}`;
+  const handlePhotoError = () => { if (photoExt === "jpg") setPhotoExt("png"); else setPhotoFailed(true); };
   const doneCount        = completedSteps.length;
   const totalSteps       = 9;
   const comp             = Math.round((doneCount / totalSteps) * 100);
@@ -96,6 +110,8 @@ function DashboardPage() {
     if (sentRef.current) return;
     sentRef.current = true;
     if (timerRef.current) clearInterval(timerRef.current);
+    // Only process if call was actually live
+    if (callStatus !== "live") return;
     const s = startRef.current !== null ? Math.floor((Date.now() - startRef.current) / 1000) : 0;
     const duration = `${Math.floor(s / 60)}:${(s % 60).toString().padStart(2, "0")}`;
     setSessionData({ ...data, callDuration: duration });
@@ -185,7 +201,7 @@ function DashboardPage() {
       }}>
 
         {/* Logo */}
-        <Link href="/patients" style={{
+        <Link href="/provider/patients" style={{
           textDecoration: "none", display: "flex", alignItems: "center",
           gap: 8, marginBottom: 28,
         }}>
@@ -224,14 +240,16 @@ function DashboardPage() {
             background: "rgba(255,255,255,0.05)",
             border: `2px solid ${avatarColor}40`,
             display: "flex", alignItems: "center", justifyContent: "center",
-            position: "relative",
+            position: "relative", overflow: "hidden",
           }}>
-            <span style={{
-              fontFamily: "var(--font-display)", fontWeight: 600, fontSize: 22,
-              color: avatarColor, letterSpacing: "-0.5px",
-            }}>
-              {initials}
-            </span>
+            {!photoFailed ? (
+              <img src={photoSrc} alt={displayName} onError={handlePhotoError}
+                style={{ width: "100%", height: "100%", objectFit: "cover", borderRadius: "50%" }} />
+            ) : (
+              <span style={{ fontFamily: "var(--font-display)", fontWeight: 600, fontSize: 22, color: avatarColor, letterSpacing: "-0.5px" }}>
+                {initials}
+              </span>
+            )}
             {callStatus === "live" && (
               <div style={{
                 position: "absolute", inset: -4, borderRadius: "50%",
@@ -404,7 +422,7 @@ function DashboardPage() {
 
         {/* Spacer + back link */}
         <div style={{ flex: 1 }} />
-        <Link href="/patients" style={{
+        <Link href="/provider/patients" style={{
           display: "flex", alignItems: "center", gap: 7,
           fontFamily: "var(--font-body)", fontSize: 11, fontWeight: 400,
           color: "rgba(240,235,227,0.3)", textDecoration: "none",
@@ -441,19 +459,6 @@ function DashboardPage() {
         }}>
           {/* Patient identifier */}
           <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-            <div style={{
-              width: 34, height: 34, borderRadius: "50%",
-              background: "var(--surface-inset)",
-              boxShadow: "inset 3px 3px 7px var(--shadow-dark), inset -3px -3px 7px var(--shadow-light)",
-              display: "flex", alignItems: "center", justifyContent: "center",
-            }}>
-              <span style={{
-                fontFamily: "var(--font-display)", fontWeight: 600,
-                fontSize: 12, color: avatarColor,
-              }}>
-                {initials}
-              </span>
-            </div>
             <div>
               <div style={{
                 fontFamily: "var(--font-body)", fontWeight: 600, fontSize: 13,

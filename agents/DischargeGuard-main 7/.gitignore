@@ -1,0 +1,59 @@
+# ── Dependencies ──────────────────────────────────────────────
+node_modules/
+.pnp
+.pnp.js
+
+# ── Next.js ───────────────────────────────────────────────────
+dashboard/.next/
+dashboard/out/
+dashboard/.vercel
+
+# ── Python ────────────────────────────────────────────────────
+__pycache__/
+*.py[cod]
+*.pyo
+.venv/
+venv/
+env/
+*.egg-info/
+dist/
+build/
+.Python
+
+# ── Environment / secrets ─────────────────────────────────────
+.env
+.env.local
+.env.*.local
+!.env.example
+
+# ── OS ────────────────────────────────────────────────────────
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# ── Editors ───────────────────────────────────────────────────
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# ── Logs ──────────────────────────────────────────────────────
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# ── Turbo ─────────────────────────────────────────────────────
+.turbo/
+
+# ── Demo audio (large binaries, generate locally) ─────────────
+demo/audio/*.mp3
+
+# ── Large files / build artifacts ─────────────────────────────
+*.zip
+dashboard.zip
+
+# ── Kiro / Claude internal worktrees ──────────────────────────
+.claude/
+
+.env.example

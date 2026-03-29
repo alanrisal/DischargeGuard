@@ -64,7 +64,6 @@ export interface Database {
           comprehension_score: number;
           flags: string[];
           summary: string;
-          /** Full ALEX:/PT: transcript from follow-up call */
           transcript: string | null;
           elevenlabs_conversation_id: string | null;
           created_at: string;
