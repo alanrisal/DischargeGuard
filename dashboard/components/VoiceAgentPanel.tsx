@@ -76,6 +76,8 @@ function VoiceAgentInner({
     transcript: string;
   }) => void;
   onStepUpdate?: (steps: number, warnings: number) => void;
+  patientName?: string;
+  languageCode?: string;
 }) {
   // ── Browser-WebSocket mode ───────────────────────────────────────────────────
   const {
@@ -442,6 +444,8 @@ export default function VoiceAgentPanel({
   onCallStart?: () => void;
   onCallEnd?: (data: { completedSteps: string[]; flaggedWarnings: { sign: string; severity: string }[]; transcript: string }) => void;
   onStepUpdate?: (steps: number, warnings: number) => void;
+  patientName?: string;
+  languageCode?: string;
 }) {
   const [phoneNumber, setPhoneNumber] = useState("");
 
