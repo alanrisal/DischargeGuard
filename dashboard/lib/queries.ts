@@ -70,7 +70,7 @@ export async function saveCallResult(result: {
   comprehension_score: number;
   flags: string[];
   summary: string;
-  elevenlabs_conversation_id?: string;
+  elevenlabs_conversation_id: string | null;
 }) {
   const { data, error } = await supabase
     .from("call_history")

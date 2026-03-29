@@ -1,25 +1,371 @@
 @import "tailwindcss";
+@import url('https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,300;0,9..144,400;0,9..144,600;1,9..144,300;1,9..144,400;1,9..144,600&family=DM+Sans:wght@300;400;500;600&display=swap');
 
+/* ─── Design Tokens ──────────────────────────────────────────────────────────── */
 :root {
-  --bg:      #f8faff;
-  --surface: #f0f4ff;
-  --card:    #e8eeff;
-  --border:  #d0d8f0;
-  --text:    #1a2340;
-  --muted:   #6b7a9e;
-  --green:   #22c55e;
-  --yellow:  #f59e0b;
-  --red:     #ef4444;
-  --blue:    #2563eb;
-  --indigo:  #4f46e5;
-  --teal:    #0ea5e9;
+  --bg-base: #F0EBE3;
+  --surface-raised: #F5F0E8;
+  --surface-inset: #E8E3DB;
+  --shadow-light: rgba(255, 255, 255, 0.88);
+  --shadow-dark: rgba(196, 183, 174, 0.72);
+
+  --text-primary: #2C2420;
+  --text-secondary: #64748B;   /* Slate — WCAG AA contrast on light bg */
+  --text-tertiary: #A89E98;
+
+  /* Clinical Blue — primary actions (WCAG AA on white) */
+  --clinical-blue: #005EB8;
+  --clinical-blue-light: rgba(0, 94, 184, 0.10);
+
+  /* Alert Red — critical misunderstandings only */
+  --alert-red: #D4351C;
+  --alert-red-light: rgba(212, 53, 28, 0.10);
+
+  /* Legacy aliases — kept for existing components */
+  --accent-clinical: #3B6FA0;
+  --accent-clinical-light: rgba(59, 111, 160, 0.12);
+  --accent-warm: #C2714F;
+  --accent-warm-light: rgba(194, 113, 79, 0.12);
+  --accent-success: #4A8C6F;
+  --accent-success-light: rgba(74, 140, 111, 0.12);
+
+  --warning-amber: #D4813A;
+  --warning-amber-bg: #FDF3E8;
+  --warning-red: #B84040;
+  --warning-red-bg: #F5E8E8;
+
+  --waveform-active: #005EB8;
+  --waveform-idle: #C2BAB4;
+
+  --font-display: 'Fraunces', Georgia, serif;
+  --font-body: 'DM Sans', sans-serif;
+
+  /* Landing page tokens */
+  --landing-bg: #1A1410;
+  --landing-text: #F0EBE3;
+  --landing-muted: rgba(240, 235, 227, 0.4);
+  --landing-accent: #C2714F;
 }
 
-*, *::before, *::after { box-sizing: border-box; }
-
-body {
-  background: var(--bg);
-  color: var(--text);
-  font-family: 'Outfit', system-ui, sans-serif;
+/* ─── Reset & Base ───────────────────────────────────────────────────────────── */
+*, *::before, *::after {
+  box-sizing: border-box;
   margin: 0;
+  padding: 0;
+}
+
+html, body {
+  height: 100%;
+  background-color: var(--bg-base);
+  color: var(--text-primary);
+  font-family: var(--font-body);
+  font-size: 14px;
+  line-height: 1.5;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+h1, h2, h3, h4, h5 {
+  font-family: var(--font-display);
+  font-weight: 400;
+  line-height: 1.2;
+}
+
+/* ─── Neumorphic Primitives ──────────────────────────────────────────────────── */
+.neu-raised {
+  background: var(--surface-raised);
+  box-shadow:
+    6px 6px 14px var(--shadow-dark),
+    -6px -6px 14px var(--shadow-light);
+  border-radius: 16px;
+}
+
+.neu-raised-sm {
+  background: var(--surface-raised);
+  box-shadow:
+    4px 4px 10px var(--shadow-dark),
+    -4px -4px 10px var(--shadow-light);
+  border-radius: 12px;
+}
+
+.neu-inset {
+  background: var(--surface-inset);
+  box-shadow:
+    inset 4px 4px 10px var(--shadow-dark),
+    inset -4px -4px 10px var(--shadow-light);
+  border-radius: 12px;
+}
+
+.neu-inset-sm {
+  background: var(--surface-inset);
+  box-shadow:
+    inset 3px 3px 7px var(--shadow-dark),
+    inset -3px -3px 7px var(--shadow-light);
+  border-radius: 8px;
+}
+
+/* ─── Neumorphic Buttons ─────────────────────────────────────────────────────── */
+.neu-btn {
+  background: var(--surface-raised);
+  box-shadow:
+    4px 4px 10px var(--shadow-dark),
+    -4px -4px 10px var(--shadow-light);
+  border: none;
+  border-radius: 999px;
+  cursor: pointer;
+  font-family: var(--font-body);
+  font-weight: 500;
+  transition: box-shadow 150ms ease, transform 150ms ease;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+}
+
+.neu-btn:hover {
+  box-shadow:
+    6px 6px 14px var(--shadow-dark),
+    -6px -6px 14px var(--shadow-light);
+  transform: translateY(-1px);
+}
+
+.neu-btn:active {
+  box-shadow:
+    inset 3px 3px 7px var(--shadow-dark),
+    inset -3px -3px 7px var(--shadow-light);
+  transform: translateY(0);
+}
+
+.neu-btn-primary {
+  background: var(--accent-clinical);
+  color: #fff;
+  box-shadow:
+    4px 4px 12px rgba(59, 111, 160, 0.4),
+    -2px -2px 8px rgba(255, 255, 255, 0.3);
+}
+
+.neu-btn-primary:hover {
+  box-shadow:
+    6px 6px 16px rgba(59, 111, 160, 0.5),
+    -3px -3px 10px rgba(255, 255, 255, 0.35);
+  transform: translateY(-1px);
+}
+
+.neu-btn-primary:active {
+  box-shadow:
+    inset 3px 3px 8px rgba(0, 0, 0, 0.25),
+    inset -2px -2px 6px rgba(255, 255, 255, 0.15);
+  transform: translateY(0);
+}
+
+.neu-btn-danger {
+  background: var(--warning-red);
+  color: #fff;
+  box-shadow:
+    4px 4px 12px rgba(184, 64, 64, 0.4),
+    -2px -2px 8px rgba(255, 255, 255, 0.2);
+}
+
+.neu-btn-danger:hover {
+  box-shadow:
+    6px 6px 16px rgba(184, 64, 64, 0.5),
+    -3px -3px 10px rgba(255, 255, 255, 0.25);
+}
+
+.neu-btn-danger:active {
+  box-shadow:
+    inset 3px 3px 8px rgba(0, 0, 0, 0.25),
+    inset -2px -2px 6px rgba(255, 255, 255, 0.1);
+}
+
+/* ─── Typography Helpers ─────────────────────────────────────────────────────── */
+.display-title {
+  font-family: var(--font-display);
+  font-style: italic;
+  font-weight: 300;
+  color: var(--text-primary);
+}
+
+.label-xs {
+  font-family: var(--font-body);
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--text-tertiary);
+}
+
+/* ─── Scrollbars ─────────────────────────────────────────────────────────────── */
+* {
+  scrollbar-width: thin;
+  scrollbar-color: var(--shadow-dark) transparent;
+}
+::-webkit-scrollbar { width: 4px; height: 4px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb {
+  background: var(--shadow-dark);
+  border-radius: 999px;
+}
+
+/* ─── Keyframes ──────────────────────────────────────────────────────────────── */
+@keyframes pulse-dot {
+  0%, 100% { opacity: 1; transform: scale(1); }
+  50% { opacity: 0.5; transform: scale(1.35); }
+}
+
+@keyframes pulse-ring {
+  0% { transform: scale(1); opacity: 0.6; }
+  100% { transform: scale(2.2); opacity: 0; }
+}
+
+@keyframes slide-up {
+  from { opacity: 0; transform: translateY(12px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes slide-in-right {
+  from { opacity: 0; transform: translateX(20px); }
+  to   { opacity: 1; transform: translateX(0); }
+}
+
+@keyframes fade-in {
+  from { opacity: 0; }
+  to   { opacity: 1; }
+}
+
+@keyframes shimmer {
+  0%   { background-position: -400px 0; }
+  100% { background-position: 400px 0; }
+}
+
+@keyframes stat-reveal {
+  from { clip-path: inset(0 100% 0 0); opacity: 0.2; }
+  to   { clip-path: inset(0 0% 0 0); opacity: 1; }
+}
+
+@keyframes logo-in {
+  from { opacity: 0; transform: scale(0.94); }
+  to   { opacity: 1; transform: scale(1); }
+}
+
+@keyframes flag-in {
+  from { opacity: 0; transform: translateX(20px); }
+  to   { opacity: 1; transform: translateX(0); }
+}
+
+@keyframes flag-pulse {
+  0%   { background-color: var(--warning-red-bg); }
+  40%  { background-color: rgba(184, 64, 64, 0.15); }
+  100% { background-color: var(--warning-red-bg); }
+}
+
+/* ─── Skeleton shimmer ───────────────────────────────────────────────────────── */
+.skeleton {
+  background: linear-gradient(
+    90deg,
+    var(--surface-inset) 0%,
+    var(--surface-raised) 50%,
+    var(--surface-inset) 100%
+  );
+  background-size: 800px 100%;
+  animation: shimmer 1.8s infinite linear;
+}
+
+/* ─── Utility ────────────────────────────────────────────────────────────────── */
+.animate-slide-up   { animation: slide-up 0.4s ease both; }
+.animate-fade-in    { animation: fade-in 0.5s ease both; }
+.animate-flag-in    { animation: flag-in 0.35s ease both; }
+.animate-flag-pulse { animation: flag-pulse 0.8s ease both; }
+
+/* ─── Nav Rail ───────────────────────────────────────────────────────────────── */
+.nav-rail {
+  width: 56px;
+  flex-shrink: 0;
+  background: #1F1A16;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 16px 0;
+  gap: 4px;
+  z-index: 10;
+}
+
+.nav-rail-btn {
+  width: 44px;
+  height: 44px;
+  border-radius: 12px;
+  border: none;
+  background: transparent;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: rgba(240, 235, 227, 0.35);
+  font-size: 18px;
+  transition: background 150ms ease, color 150ms ease;
+  text-decoration: none;
+  position: relative;
+}
+
+.nav-rail-btn:hover,
+.nav-rail-btn.active {
+  background: rgba(255, 255, 255, 0.08);
+  color: rgba(240, 235, 227, 0.9);
+}
+
+.nav-rail-btn.active::before {
+  content: "";
+  position: absolute;
+  left: 0;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 3px;
+  height: 20px;
+  background: var(--clinical-blue);
+  border-radius: 0 3px 3px 0;
+}
+
+/* ─── WCAG touch targets — all interactive elements ≥ 44×44px ───────────────── */
+button, a, [role="button"] {
+  min-height: 44px;
+  min-width: 44px;
+}
+
+/* Override for inline/text links that shouldn't be 44px tall */
+a.inline-link {
+  min-height: unset;
+  min-width: unset;
+}
+
+/* ─── Body text minimum 16px for medical content ─────────────────────────────── */
+.med-body {
+  font-size: 16px;
+  line-height: 1.6;
+  color: var(--text-primary);
+}
+
+.med-name {
+  font-size: 18px;
+  font-weight: 700;
+  color: var(--text-primary);
+}
+
+/* ─── Nav Rail ───────────────────────────────────────────────────────────────── */
+.back-link {
+  color: var(--text-tertiary);
+  transition: color 200ms ease;
+}
+.back-link:hover { color: var(--accent-warm); }
+
+.sidebar-back-link {
+  color: var(--text-tertiary);
+  transition: color 200ms ease;
+}
+.sidebar-back-link:hover { color: var(--accent-warm); }
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    transition-duration: 0.01ms !important;
+  }
 }

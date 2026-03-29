@@ -1,0 +1,78 @@
+{
+  "hospital": {
+    "name": "Riverside General Hospital"
+  },
+  "patient": {
+    "first_name": "Wei",
+    "language": "Mandarin",
+    "discharge_date": "2026-03-28",
+    "diagnosis": "Post-cardiac stent placement, Hypertension, Atrial Fibrillation",
+    "procedure": "Percutaneous coronary intervention (cardiac stent placement)",
+    "primary_provider": "Dr. Anita Patel"
+  },
+  "medications": [
+    {
+      "name": "Aspirin",
+      "dose": "81mg",
+      "frequency": "once daily with breakfast",
+      "purpose": "prevents blood clots from forming in your heart stent",
+      "special_instructions": "do not stop taking this without talking to Dr. Patel — stopping suddenly can cause a heart attack"
+    },
+    {
+      "name": "Clopidogrel",
+      "dose": "75mg",
+      "frequency": "once daily",
+      "purpose": "works with aspirin to prevent the stent from becoming blocked",
+      "special_instructions": "take at the same time each day; do not skip doses"
+    },
+    {
+      "name": "Metoprolol",
+      "dose": "25mg",
+      "frequency": "twice daily, morning and evening",
+      "purpose": "controls your heart rate and reduces strain on your heart",
+      "special_instructions": "do not stop suddenly — taper off only under doctor supervision"
+    },
+    {
+      "name": "Atorvastatin",
+      "dose": "40mg",
+      "frequency": "once daily at bedtime",
+      "purpose": "lowers your cholesterol to protect the stent and prevent future blockages",
+      "special_instructions": "avoid eating grapefruit or drinking grapefruit juice while on this medication"
+    }
+  ],
+  "activity_restrictions": [
+    "no strenuous activity or heavy lifting for 2 weeks",
+    "short gentle walks are encouraged — start with 10 minutes and gradually increase",
+    "no driving for 48 hours after the procedure",
+    "avoid vigorous exercise until cleared by Dr. Patel",
+    "stop any activity immediately if you feel chest pain, pressure, or shortness of breath"
+  ],
+  "wound_care": [
+    "keep the catheter insertion site (wrist or groin) clean and dry for 48 hours",
+    "a small bruise or firmness at the insertion site is normal",
+    "do not rub or scratch the site — let it heal on its own",
+    "if bleeding or significant swelling occurs at the site, apply firm pressure and call 911"
+  ],
+  "follow_ups": [
+    {
+      "date": "April 5, 2026",
+      "time": "9:00 AM",
+      "provider": "Dr. Anita Patel",
+      "purpose": "post-procedure cardiac check and medication review"
+    },
+    {
+      "date": "April 9, 2026",
+      "time": "7:30 AM",
+      "provider": "Riverside Cardiac Lab",
+      "purpose": "ECG and lipid panel to assess heart function and cholesterol"
+    }
+  ],
+  "warning_signs": [
+    "chest pain, pressure, tightness, or squeezing — call 911 immediately",
+    "shortness of breath or difficulty breathing",
+    "dizziness, fainting, or unusual lightheadedness",
+    "swelling in your legs or ankles",
+    "unusually rapid or irregular heartbeat",
+    "bleeding or large bruising at the catheter insertion site that does not stop"
+  ]
+}

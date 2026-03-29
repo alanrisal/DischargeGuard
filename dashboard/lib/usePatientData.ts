@@ -1,7 +1,12 @@
 "use client";
 import { useEffect, useState } from "react";
 import { getPrescriptions, getVisits, getCallHistory, getAllPatients } from "./queries";
-import { PATIENT_PRESCRIPTIONS, PATIENT_VISITS, PATIENT_CALL_HISTORY } from "./demoData";
+import {
+  PATIENT_PRESCRIPTIONS, PATIENT_VISITS, PATIENT_CALL_HISTORY,
+  WEI_PRESCRIPTIONS, WEI_VISITS, WEI_CALL_HISTORY,
+  JAMES_PRESCRIPTIONS, JAMES_VISITS, JAMES_CALL_HISTORY,
+} from "./demoData";
+import { getScenario } from "./scenarioData";
 
 export type RxRow = {
   name: string; purpose: string; status: string;
@@ -16,9 +21,21 @@ export type CallRow = {
   flags: string[]; summary: string; elevenlabs_conversation_id: string | null;
 };
 
-const DEMO_MRN = "847291";
+type DemoDataSet = {
+  prescriptions: typeof PATIENT_PRESCRIPTIONS;
+  visits: typeof PATIENT_VISITS;
+  calls: typeof PATIENT_CALL_HISTORY;
+};
 
-export function usePatientData() {
+function getDemoData(scenarioId: string): DemoDataSet {
+  switch (scenarioId) {
+    case "wei":   return { prescriptions: WEI_PRESCRIPTIONS,   visits: WEI_VISITS,   calls: WEI_CALL_HISTORY };
+    case "james": return { prescriptions: JAMES_PRESCRIPTIONS, visits: JAMES_VISITS, calls: JAMES_CALL_HISTORY };
+    default:      return { prescriptions: PATIENT_PRESCRIPTIONS, visits: PATIENT_VISITS, calls: PATIENT_CALL_HISTORY };
+  }
+}
+
+export function usePatientData(scenarioId = "maria") {
   const [prescriptions, setPrescriptions] = useState<RxRow[]>([]);
   const [visits, setVisits]               = useState<VisitRow[]>([]);
   const [calls, setCalls]                 = useState<CallRow[]>([]);
@@ -26,10 +43,12 @@ export function usePatientData() {
   const [source, setSource]               = useState<"supabase" | "demo">("demo");
 
   useEffect(() => {
+    const scenario = getScenario(scenarioId);
+
     async function load() {
       try {
         const patients = await getAllPatients();
-        const patient  = patients?.find((p: { mrn: string }) => p.mrn === DEMO_MRN);
+        const patient  = patients?.find((p: { mrn: string }) => p.mrn === scenario.mrn);
 
         if (!patient) { fallback(); return; }
 
@@ -55,15 +74,16 @@ export function usePatientData() {
     }
 
     function fallback() {
-      setPrescriptions(PATIENT_PRESCRIPTIONS.map((r) => ({ name: r.name, purpose: r.purpose, status: r.status, prescribed_by: r.by, prescribed_date: r.prescribed, refills: r.refills })));
-      setVisits(PATIENT_VISITS.map((v) => ({ date: v.date, type: v.type, provider: v.provider, department: v.dept, notes: v.note })));
-      setCalls(PATIENT_CALL_HISTORY.map((c) => ({ date: c.date, time: c.time, duration: c.duration, type: c.type, status: c.status, agent: c.agent, language_code: c.language, comprehension_score: c.comprehension, flags: c.flags, summary: c.summary, elevenlabs_conversation_id: null })));
+      const demo = getDemoData(scenarioId);
+      setPrescriptions(demo.prescriptions.map((r) => ({ name: r.name, purpose: r.purpose, status: r.status, prescribed_by: r.by, prescribed_date: r.prescribed, refills: r.refills })));
+      setVisits(demo.visits.map((v) => ({ date: v.date, type: v.type, provider: v.provider, department: v.dept, notes: v.note })));
+      setCalls(demo.calls.map((c) => ({ date: c.date, time: c.time, duration: c.duration, type: c.type, status: c.status, agent: c.agent, language_code: c.language, comprehension_score: c.comprehension, flags: c.flags, summary: c.summary, elevenlabs_conversation_id: null })));
       setSource("demo");
       setLoading(false);
     }
 
     load();
-  }, []);
+  }, [scenarioId]);
 
   return { prescriptions, visits, calls, loading, source };
 }

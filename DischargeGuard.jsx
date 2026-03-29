@@ -594,24 +594,52 @@ const css = `
   .dg-agent-name { flex: 1; font-family: var(--mono); font-size: 11px; color: var(--muted); }
   .dg-agent-st { font-family: var(--mono); font-size: 10px; }
 
-  /* Start button */
-  .dg-start-btn {
-    display: block;
-    margin: 0 auto 20px;
-    padding: 12px 32px;
-    background: linear-gradient(135deg, var(--blue), var(--teal));
-    color: white;
-    font-family: var(--font);
-    font-size: 15px;
-    font-weight: 600;
-    border: none;
-    border-radius: 10px;
+  /* Shared button style */
+  .button-3 {
+    appearance: none;
+    background-color: #2ea44f;
+    border: 1px solid rgba(27, 31, 35, .15);
+    border-radius: 6px;
+    box-shadow: rgba(27, 31, 35, .1) 0 1px 0;
+    box-sizing: border-box;
+    color: #fff;
     cursor: pointer;
-    letter-spacing: 0.3px;
-    transition: transform 0.15s ease, opacity 0.15s ease;
+    display: inline-block;
+    font-family: -apple-system,system-ui,"Segoe UI",Helvetica,Arial,sans-serif,"Apple Color Emoji","Segoe UI Emoji";
+    font-size: 14px;
+    font-weight: 600;
+    line-height: 20px;
+    padding: 6px 16px;
+    position: relative;
+    text-align: center;
+    text-decoration: none;
+    user-select: none;
+    -webkit-user-select: none;
+    touch-action: manipulation;
+    vertical-align: middle;
+    white-space: nowrap;
   }
-  .dg-start-btn:hover { transform: translateY(-1px); opacity: 0.9; }
-  .dg-start-btn:active { transform: translateY(0); }
+  .button-3:focus:not(:focus-visible):not(.focus-visible) {
+    box-shadow: none;
+    outline: none;
+  }
+  .button-3:hover {
+    background-color: #2c974b;
+  }
+  .button-3:focus {
+    box-shadow: rgba(46, 164, 79, .4) 0 0 0 3px;
+    outline: none;
+  }
+  .button-3:disabled {
+    background-color: #94d3a2;
+    border-color: rgba(27, 31, 35, .1);
+    color: rgba(255, 255, 255, .8);
+    cursor: default;
+  }
+  .button-3:active {
+    background-color: #298e46;
+    box-shadow: rgba(20, 70, 32, .2) 0 1px 0 inset;
+  }
 
   .dg-idle-overlay {
     position: absolute;
@@ -970,7 +998,7 @@ export default function DischargeGuard() {
                 <div className="dg-idle-icon">📞</div>
                 <div style={{ fontSize: 14, fontWeight: 600, marginBottom: 4 }}>Scenario: Maria Garcia</div>
                 <div className="dg-idle-label">Post-discharge follow-up · Spanish</div>
-                <button className="dg-start-btn" style={{ marginTop: 12 }} onClick={startDemo}>
+                <button className="button-3" style={{ marginTop: 12 }} onClick={startDemo}>
                   ▶ Run Demo Call
                 </button>
               </div>
@@ -1141,7 +1169,7 @@ export default function DischargeGuard() {
 
             {phase === "done" && (
               <div style={{ marginTop: 12 }}>
-                <button className="dg-start-btn" style={{ fontSize: 12, padding: "8px 20px", margin: 0 }}
+                <button className="button-3"
                   onClick={() => {
                     setPhase("idle");
                     setItems(Object.fromEntries(CHECKLIST.map(c => [c.id, { status: "idle", score: "", fill: 0, note: "" }])));
