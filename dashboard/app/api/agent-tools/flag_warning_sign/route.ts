@@ -1,5 +1,10 @@
-import { kv } from '@vercel/kv';
+import { Redis } from '@upstash/redis';
 import { NextRequest, NextResponse } from 'next/server';
+
+const redis = new Redis({
+  url: process.env.STORAGE_KV_REST_API_URL!,
+  token: process.env.STORAGE_KV_REST_API_TOKEN!,
+});
 
 export async function POST(req: NextRequest) {
   try {
@@ -9,7 +14,7 @@ export async function POST(req: NextRequest) {
     console.log('[Webhook] flag_warning_sign:', body);
 
     // Get existing warnings first
-    const existing = await kv.hget<string>(
+    const existing = await redis.hget<string>(
       `session:${conversation_id}`,
       'flaggedWarnings'
     );
@@ -17,7 +22,7 @@ export async function POST(req: NextRequest) {
     const warnings = existing ? JSON.parse(existing) : [];
     warnings.push({ sign, severity, flaggedAt: Date.now() });
 
-    await kv.hset(`session:${conversation_id}`, {
+    await redis.hset(`session:${conversation_id}`, {
       flaggedWarnings: JSON.stringify(warnings),
       updatedAt: Date.now(),
     });

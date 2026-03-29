@@ -1,5 +1,10 @@
-import { kv } from '@vercel/kv';
+import { Redis } from '@upstash/redis';
 import { NextRequest, NextResponse } from 'next/server';
+
+const redis = new Redis({
+  url: process.env.STORAGE_KV_REST_API_URL!,
+  token: process.env.STORAGE_KV_REST_API_TOKEN!,
+});
 
 export async function POST(req: NextRequest) {
   try {
@@ -9,11 +14,11 @@ export async function POST(req: NextRequest) {
     console.log('[Webhook] update_checklist_item:', body);
 
     // Get existing checklist state first (stored as JSON string)
-    const existingStr = await kv.hget<string>(`session:${conversation_id}`, 'itemStates');
+    const existingStr = await redis.hget<string>(`session:${conversation_id}`, 'itemStates');
     const itemStates: Record<string, unknown> = existingStr ? JSON.parse(existingStr) : {};
     itemStates[item_id] = { status, note, updatedAt: Date.now() };
 
-    await kv.hset(`session:${conversation_id}`, {
+    await redis.hset(`session:${conversation_id}`, {
       itemStates: JSON.stringify(itemStates),
       updatedAt: Date.now(),
     });

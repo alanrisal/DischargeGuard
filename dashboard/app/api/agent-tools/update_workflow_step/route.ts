@@ -1,5 +1,10 @@
-import { kv } from '@vercel/kv';
+import { Redis } from '@upstash/redis';
 import { NextRequest, NextResponse } from 'next/server';
+
+const redis = new Redis({
+  url: process.env.STORAGE_KV_REST_API_URL!,
+  token: process.env.STORAGE_KV_REST_API_TOKEN!,
+});
 
 export async function POST(req: NextRequest) {
   try {
@@ -8,13 +13,9 @@ export async function POST(req: NextRequest) {
 
     console.log('[Webhook] update_workflow_step:', body);
 
-    if (!conversation_id) {
-      return NextResponse.json({ success: false, error: 'missing conversation_id' }, { status: 400 });
-    }
-
-    await kv.hset(`session:${conversation_id}`, {
+    await redis.hset(`session:${conversation_id}`, {
       currentStep: step,
-      lastStepStatus: status ?? 'active',
+      [`step_${step}`]: status,
       updatedAt: Date.now(),
     });
 

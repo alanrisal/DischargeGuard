@@ -1,6 +1,11 @@
 // Your React UI polls this to get live state during a call
-import { kv } from '@vercel/kv';
+import { Redis } from '@upstash/redis';
 import { NextRequest, NextResponse } from 'next/server';
+
+const redis = new Redis({
+  url: process.env.STORAGE_KV_REST_API_URL!,
+  token: process.env.STORAGE_KV_REST_API_TOKEN!,
+});
 
 export async function GET(req: NextRequest) {
   try {
@@ -11,7 +16,7 @@ export async function GET(req: NextRequest) {
       return NextResponse.json({ error: 'missing conversation_id' }, { status: 400 });
     }
 
-    const session = await kv.hgetall(`session:${conversation_id}`);
+    const session = await redis.hgetall(`session:${conversation_id}`);
 
     if (!session) {
       return NextResponse.json({ found: false });
