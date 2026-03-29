@@ -6,7 +6,7 @@ import { SCENARIOS } from "./scenarioData";
 
 // ─── Must be called inside <ConversationProvider> ─────────────────────────────
 
-const AGENT_ID = "agent_3001kmtk38tae4m9rhs2thzdvh3r";
+const AGENT_ID = "agent_2801kmx1cm5effgr5ehvfx1jv8rr";
 
 export const WORKFLOW_STEPS = [
   { id: "opening",               label: "Opening" },
