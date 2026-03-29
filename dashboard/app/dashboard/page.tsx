@@ -1,5 +1,6 @@
 "use client";
 import { useState, useRef, useEffect } from "react";
+import { useSearchParams } from "next/navigation";
 import VoiceAgentPanel from "@/components/VoiceAgentPanel";
 import SummaryCard from "@/components/SummaryCard";
 import AgentGraph from "@/components/AgentGraph";
@@ -16,6 +17,18 @@ const B = {
 type CallStatus = "idle" | "live" | "done";
 
 export default function DashboardPage() {
+  const searchParams = useSearchParams();
+  const scenarioMrn  = searchParams.get("scenario") ?? "847291";
+
+  const [patient, setPatient] = useState<{ name: string; mrn: string; diagnosis: string; language: string; language_code: string } | null>(null);
+
+  // Fetch patient from Supabase by MRN
+  useEffect(() => {
+    fetch(`/api/patient?mrn=${scenarioMrn}`)
+      .then((r) => r.json())
+      .then((d) => { if (d.patient) setPatient(d.patient); })
+      .catch(() => {}); // silently fall back to hardcoded
+  }, [scenarioMrn]);
   const [callStatus, setCallStatus]   = useState<CallStatus>("idle");
   const [callTime, setCallTime]       = useState("0:00");
   const [completedSteps, setCompletedSteps] = useState(0);
@@ -72,7 +85,9 @@ export default function DashboardPage() {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
-        patientName:     "Maria Garcia",
+        patientName:     patient?.name ?? "Maria Garcia",
+        patientMrn:      patient?.mrn ?? scenarioMrn,
+        languageCode:    patient?.language_code ?? "es",
         callTime:        duration,
         comprehension:   comp,
         greenCount:      data.completedSteps.length,
@@ -113,12 +128,14 @@ export default function DashboardPage() {
         <div style={{ width: 1, height: 28, background: B.border }} />
 
         <div>
-          <div style={{ fontWeight: 700, fontSize: 14, color: B.text }}>Maria Garcia</div>
+          <div style={{ fontWeight: 700, fontSize: 14, color: B.text }}>{patient?.name ?? "Maria Garcia"}</div>
           <div style={{ display: "flex", gap: 5, marginTop: 3 }}>
-            {["MRN 847291", "Post-cholecystectomy", "DOB 03/15/1955"].map((t) => (
+            {[`MRN ${patient?.mrn ?? "847291"}`, patient?.diagnosis?.split(",")[0] ?? "Post-cholecystectomy"].map((t) => (
               <span key={t} style={{ background: B.surfaceD, border: `1px solid ${B.border}`, borderRadius: 20, padding: "1px 8px", fontSize: 9, color: B.muted, fontFamily: "monospace" }}>{t}</span>
             ))}
-            <span style={{ background: "#dcfce7", border: "1px solid #86efac", borderRadius: 20, padding: "1px 8px", fontSize: 9, color: "#15803d", fontFamily: "monospace" }}>ES · Spanish</span>
+            <span style={{ background: "#dcfce7", border: "1px solid #86efac", borderRadius: 20, padding: "1px 8px", fontSize: 9, color: "#15803d", fontFamily: "monospace" }}>
+              {patient?.language_code?.toUpperCase() ?? "ES"} · {patient?.language ?? "Spanish"}
+            </span>
           </div>
         </div>
 
@@ -166,6 +183,8 @@ export default function DashboardPage() {
             onCallStart={handleCallStart}
             onCallEnd={handleCallEnd}
             onStepUpdate={handleStepUpdate}
+            patientName={patient?.name}
+            languageCode={patient?.language_code}
           />
           <div style={{ height: 1, background: B.border, flexShrink: 0 }} />
           {callStatus === "done" && sessionData ? (

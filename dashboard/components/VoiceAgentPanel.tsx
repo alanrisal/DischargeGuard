@@ -14,16 +14,18 @@ const C = {
 };
 
 // ── Inner panel (must live inside ConversationProvider) ───────────────────────
-function VoiceAgentInner({ onCallStart, onCallEnd, onStepUpdate }: {
+function VoiceAgentInner({ onCallStart, onCallEnd, onStepUpdate, patientName, languageCode }: {
   onCallStart?: () => void;
   onCallEnd?: (data: { completedSteps: string[]; flaggedWarnings: { sign: string; severity: string }[]; transcript: string }) => void;
   onStepUpdate?: (steps: number, warnings: number) => void;
+  patientName?: string;
+  languageCode?: string;
 }) {
   const {
     status, isSpeaking,
     transcript, currentStep, completedSteps, flaggedWarnings,
     startCall, endCall,
-  } = useVoiceAgent();
+  } = useVoiceAgent({ patientName, languageCode });
 
   const transcriptRef = useRef<HTMLDivElement>(null);
   const firedRef      = useRef(false);
@@ -256,14 +258,16 @@ function StatusDot({ status, isSpeaking }: { status: string; isSpeaking: boolean
 }
 
 // ── Public export: wraps inner with required ConversationProvider ─────────────
-export default function VoiceAgentPanel({ onCallStart, onCallEnd, onStepUpdate }: {
+export default function VoiceAgentPanel({ onCallStart, onCallEnd, onStepUpdate, patientName, languageCode }: {
   onCallStart?: () => void;
   onCallEnd?: (data: { completedSteps: string[]; flaggedWarnings: { sign: string; severity: string }[]; transcript: string }) => void;
   onStepUpdate?: (steps: number, warnings: number) => void;
+  patientName?: string;
+  languageCode?: string;
 }) {
   return (
     <ConversationProvider>
-      <VoiceAgentInner onCallStart={onCallStart} onCallEnd={onCallEnd} onStepUpdate={onStepUpdate} />
+      <VoiceAgentInner onCallStart={onCallStart} onCallEnd={onCallEnd} onStepUpdate={onStepUpdate} patientName={patientName} languageCode={languageCode} />
     </ConversationProvider>
   );
 }

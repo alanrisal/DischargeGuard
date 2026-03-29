@@ -1,12 +1,43 @@
 import ScenarioCard from "@/components/ScenarioCard";
+import { createClient } from "@supabase/supabase-js";
 
-const scenarios = [
+const FALLBACK = [
   { id: "maria", name: "Maria Garcia",  lang: "Spanish",  note: "Post-surgery follow-up",  emoji: "🇪🇸" },
   { id: "wei",   name: "Wei Chen",      lang: "Mandarin", note: "Headache escalation path", emoji: "🇨🇳" },
   { id: "james", name: "James Wilson",  lang: "English",  note: "Elderly, multiple meds",   emoji: "🇺🇸" },
 ];
 
-export default function Home() {
+const LANG_EMOJI: Record<string, string> = {
+  es: "🇪🇸", zh: "🇨🇳", en: "🇺🇸", ko: "🇰🇷", fr: "🇫🇷", de: "🇩🇪", pt: "🇧🇷", hi: "🇮🇳",
+};
+
+async function getPatients() {
+  try {
+    const supabase = createClient(
+      process.env.NEXT_PUBLIC_SUPABASE_URL!,
+      process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
+    );
+    const { data, error } = await supabase
+      .from("patients")
+      .select("id, mrn, name, language, language_code, diagnosis")
+      .order("name");
+    if (error || !data?.length) return FALLBACK;
+    return data.map((p) => ({
+      id:    p.mrn,          // use MRN as URL param so it's human-readable
+      dbId:  p.id,
+      name:  p.name,
+      lang:  p.language,
+      note:  p.diagnosis.split(",")[0].trim(),
+      emoji: LANG_EMOJI[p.language_code] ?? "🏥",
+    }));
+  } catch {
+    return FALLBACK;
+  }
+}
+
+export default async function Home() {
+  const patients = await getPatients();
+
   return (
     <main style={{
       minHeight: "100vh", display: "flex", flexDirection: "column",
@@ -30,14 +61,16 @@ export default function Home() {
         borderRadius: 999, background: "#f0fdf4", border: "1px solid #86efac",
         fontSize: 12, color: "#15803d",
       }}>
-        <span style={{ width: 7, height: 7, borderRadius: "50%", background: "#16a34a", display: "inline-block", boxShadow: "0 0 0 3px rgba(22,163,74,0.2)" }} />
-        Agents ready
-        <span style={{ color: "#86efac" }}>·</span>
-        <span style={{ color: "#4ade80" }}>demo mode</span>
+        <span style={{ width: 7, height: 7, borderRadius: "50%", background: "#16a34a", display: "inline-block" }} />
+        Agents ready · demo mode
       </div>
 
-      <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 16, width: "100%", maxWidth: 640 }}>
-        {scenarios.map((s) => <ScenarioCard key={s.id} {...s} />)}
+      <div style={{
+        display: "grid",
+        gridTemplateColumns: `repeat(${Math.min(patients.length, 3)}, 1fr)`,
+        gap: 16, width: "100%", maxWidth: patients.length > 3 ? 900 : 640,
+      }}>
+        {patients.map((s) => <ScenarioCard key={s.id} {...s} />)}
       </div>
 
       <p style={{ fontSize: 12, color: "#c7d2e8" }}>Select a patient to open the live dashboard</p>

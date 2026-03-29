@@ -33,7 +33,7 @@ export type FlaggedWarning = {
   severity: "warning" | "urgent";
 };
 
-export function useVoiceAgent() {
+export function useVoiceAgent({ patientName, languageCode }: { patientName?: string; languageCode?: string } = {}) {
   const [transcript, setTranscript] = useState<TranscriptEntry[]>([]);
   const [currentStep, setCurrentStep] = useState<WorkflowStepId | null>(null);
   const [completedSteps, setCompletedSteps] = useState<WorkflowStepId[]>([]);
@@ -148,11 +148,11 @@ export function useVoiceAgent() {
 
     await conversation.startSession({
       agentId: AGENT_ID,
-      connectionType: "websocket", // WebRTC (default) needs LiveKit infrastructure — use WebSocket
+      connectionType: "websocket",
       dynamicVariables: {
-        patient_first_name: patientData.patient.first_name,
+        patient_first_name: patientName ?? patientData.patient.first_name,
         hospital_name:      patientData.hospital.name,
-        patient_language:   patientData.patient.language,
+        patient_language:   languageCode ?? patientData.patient.language,
         discharge_date:     patientData.patient.discharge_date,
         diagnosis:          patientData.patient.diagnosis,
         procedure:          patientData.patient.procedure,
