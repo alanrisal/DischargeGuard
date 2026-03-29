@@ -4,12 +4,17 @@ import { useState } from "react";
 
 const ACCENT = "#2563eb";
 
-interface Props { id: string; name: string; lang: string; note: string; emoji: string; }
+interface Props { id: string; name: string; lang: string; note: string; emoji: string; voiceScenario?: string; }
 
-export default function ScenarioCard({ id, name, lang, note, emoji }: Props) {
+export default function ScenarioCard({ id, name, lang, note, emoji, voiceScenario }: Props) {
   const [hovered, setHovered] = useState(false);
+  // If voiceScenario differs from id (Supabase patient with real MRN),
+  // pass both: ?scenario=<voice_key>&mrn=<actual_mrn>
+  const href = voiceScenario && voiceScenario !== id
+    ? `/dashboard?scenario=${voiceScenario}&mrn=${id}`
+    : `/dashboard?scenario=${id}`;
   return (
-    <Link href={`/dashboard?scenario=${id}`}
+    <Link href={href}
       onMouseEnter={() => setHovered(true)}
       onMouseLeave={() => setHovered(false)}
       style={{

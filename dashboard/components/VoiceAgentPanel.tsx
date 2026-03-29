@@ -5,9 +5,10 @@ import { useVoiceAgent, WORKFLOW_STEPS } from "@/lib/useVoiceAgent";
 import type { TranscriptEntry, WorkflowStepId, FlaggedWarning } from "@/lib/useVoiceAgent";
 import type { PatientVoiceData } from "@/lib/scenarioData";
 
+// Legacy palette — only used for StatusDot and pulseRing keyframe
 const C = {
-  accent: "#2563eb", green: "#16a34a", amber: "#d97706",
-  red: "#dc2626", muted: "#6b7a9e", border: "#dde3f5", text: "#1a2340",
+  accent: "#3B6FA0", green: "#4A8C6F", amber: "#D4813A",
+  red: "#B84040", muted: "#A89E98", border: "var(--shadow-dark)", text: "#2C2420",
 };
 
 // ── Step inference from transcript text (phone mode only) ─────────────────────
@@ -70,6 +71,8 @@ function VoiceAgentInner({
   onCallStart,
   onCallEnd,
   onStepUpdate,
+  onDetailedStepUpdate,
+  onSpeakingChange,
 }: {
   phoneNumber: string;
   patientData?: PatientVoiceData;
@@ -81,6 +84,8 @@ function VoiceAgentInner({
     transcript: string;
   }) => void;
   onStepUpdate?: (steps: number, warnings: number) => void;
+  onDetailedStepUpdate?: (completedSteps: string[], currentStep: string | null) => void;
+  onSpeakingChange?: (isSpeaking: boolean) => void;
 }) {
   // ── Browser-WebSocket mode ───────────────────────────────────────────────────
   const {
@@ -155,14 +160,23 @@ function VoiceAgentInner({
 
   // ── Live metric updates for parent ──────────────────────────────────────────
   useEffect(() => {
-    if (!isPhoneMode)
+    if (!isPhoneMode) {
       onStepUpdate?.(wsCompletedSteps.length, wsFlaggedWarnings.length);
-  }, [wsCompletedSteps.length, wsFlaggedWarnings.length, onStepUpdate, isPhoneMode]);
+      onDetailedStepUpdate?.(wsCompletedSteps as unknown as string[], wsCurrentStep);
+    }
+  }, [wsCompletedSteps.length, wsCurrentStep, wsFlaggedWarnings.length, onStepUpdate, onDetailedStepUpdate, isPhoneMode]);
 
   useEffect(() => {
-    if (isPhoneMode)
+    if (isPhoneMode) {
       onStepUpdate?.(phoneCompletedSteps.length, phoneFlaggedWarnings.length);
-  }, [phoneCompletedSteps.length, phoneFlaggedWarnings.length, onStepUpdate, isPhoneMode]);
+      onDetailedStepUpdate?.(phoneCompletedSteps as unknown as string[], phoneCurrentStep);
+    }
+  }, [phoneCompletedSteps.length, phoneCurrentStep, phoneFlaggedWarnings.length, onStepUpdate, onDetailedStepUpdate, isPhoneMode]);
+
+  // ── Speaking state for waveform ───────────────────────────────────────────
+  useEffect(() => {
+    if (!isPhoneMode) onSpeakingChange?.(isSpeaking);
+  }, [isSpeaking, isPhoneMode, onSpeakingChange]);
 
   // ── Phone mode: infer step + warnings from a new transcript entry ────────────
   function processPhoneEntry(entry: TranscriptEntry) {
@@ -397,23 +411,27 @@ function VoiceAgentInner({
   }
 
   return (
-    <div style={{ display: "flex", flexDirection: "column", gap: 16, height: "100%", fontFamily: "'Outfit', system-ui, sans-serif" }}>
+    <div style={{ display: "flex", flexDirection: "column", gap: 12, height: "100%", fontFamily: "var(--font-body)" }}>
 
       {/* ── Header ── */}
       <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
         <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-          <span style={{ fontSize: 13, fontWeight: 700, color: C.text }}>Voice Agent</span>
+          <span style={{
+            fontSize: 11, fontWeight: 600,
+            color: "var(--text-tertiary)", letterSpacing: "0.08em", textTransform: "uppercase",
+          }}>
+            Voice Agent
+          </span>
           <StatusDot status={displayStatus} isSpeaking={!isPhoneMode && isSpeaking} />
         </div>
         <button
           onClick={isConnected ? handleEnd : handleStart}
           disabled={isConnecting}
+          className={isConnected ? "neu-btn neu-btn-danger" : "neu-btn neu-btn-primary"}
           style={{
-            padding: "6px 16px", borderRadius: 8, border: "none",
+            padding: "7px 18px", fontSize: 11, fontWeight: 600,
             cursor: isConnecting ? "not-allowed" : "pointer",
-            fontFamily: "inherit", fontSize: 12, fontWeight: 600,
-            background: isConnected ? C.red : C.accent, color: "#fff",
-            opacity: isConnecting ? 0.6 : 1, transition: "background 0.2s",
+            opacity: isConnecting ? 0.6 : 1,
           }}
         >
           {isConnecting ? (isPhoneMode ? "Dialing…" : "Connecting…") : isConnected ? "End Call" : "Start Call"}
@@ -422,38 +440,70 @@ function VoiceAgentInner({
 
       {/* ── Phone status hint ── */}
       {isPhoneMode && (
-        <div style={{ fontSize: 10, height: 16 }}>
-          {phoneStatus === "calling" && <span style={{ color: C.amber }}>◌ Dialing {phoneNumber.trim()}…</span>}
+        <div style={{ fontSize: 10, height: 14, letterSpacing: "0.02em" }}>
+          {phoneStatus === "calling" && (
+            <span style={{ color: "var(--warning-amber)" }}>◌ Dialing {phoneNumber.trim()}…</span>
+          )}
           {phoneStatus === "connected" && (
-            <span style={{ color: C.green }}>
+            <span style={{ color: "var(--accent-success)" }}>
               ● Live — ElevenLabs: {convStatus || "waiting…"}
             </span>
           )}
-          {phoneStatus === "error" && phoneError && <span style={{ color: C.red }}>{phoneError}</span>}
+          {phoneStatus === "error" && phoneError && (
+            <span style={{ color: "var(--warning-red)" }}>{phoneError}</span>
+          )}
         </div>
       )}
 
       {/* ── Body ── */}
-      <div style={{ flex: 1, display: "grid", gridTemplateColumns: "1fr 180px", gap: 14, minHeight: 0 }}>
+      <div style={{ flex: 1, display: "grid", gridTemplateColumns: "1fr 172px", gap: 12, minHeight: 0 }}>
 
         {/* LEFT: transcript */}
-        <div style={{ display: "flex", flexDirection: "column", gap: 6, minHeight: 0 }}>
-          <span style={{ fontSize: 10, fontWeight: 600, color: C.muted, letterSpacing: "0.6px", textTransform: "uppercase" }}>
+        <div style={{ display: "flex", flexDirection: "column", gap: 5, minHeight: 0 }}>
+          <span style={{
+            fontSize: 9, fontWeight: 700, color: "var(--text-tertiary)",
+            letterSpacing: "0.1em", textTransform: "uppercase",
+          }}>
             Live Transcript
-            {isPhoneMode && <span style={{ fontWeight: 400, marginLeft: 6 }}>(per-turn, ~1–2 s delay)</span>}
+            {isPhoneMode && (
+              <span style={{ fontWeight: 400, marginLeft: 6, letterSpacing: "0.03em", textTransform: "none" }}>
+                (~1–2 s delay)
+              </span>
+            )}
           </span>
-          <div ref={transcriptRef} style={{ flex: 1, overflowY: "auto", background: "#fff", border: `1px solid ${C.border}`, borderRadius: 10, padding: "10px 12px", display: "flex", flexDirection: "column", gap: 8 }}>
+          <div
+            ref={transcriptRef}
+            style={{
+              flex: 1, overflowY: "auto",
+              background: "var(--surface-inset)",
+              boxShadow: "inset 4px 4px 10px var(--shadow-dark), inset -4px -4px 10px var(--shadow-light)",
+              borderRadius: 10, padding: "10px 12px",
+              display: "flex", flexDirection: "column", gap: 8,
+            }}
+          >
             {displayTranscript.length === 0 ? (
-              <p style={{ color: C.muted, fontSize: 11, textAlign: "center", marginTop: 20 }}>
-                {isConnected ? (isPhoneMode ? "Waiting for first turn…" : "Listening…") : "Start a call to see the live transcript."}
+              <p style={{
+                color: "var(--text-tertiary)", fontSize: 11,
+                textAlign: "center", marginTop: 20,
+                fontStyle: "italic", fontWeight: 300,
+              }}>
+                {isConnected
+                  ? (isPhoneMode ? "Waiting for first turn…" : "Listening…")
+                  : "Start a call to see the live transcript."}
               </p>
             ) : (
               displayTranscript.map((entry) => (
                 <div key={entry.id} style={{ display: "flex", gap: 6, alignItems: "flex-start" }}>
-                  <span style={{ fontSize: 9, fontWeight: 700, fontFamily: "monospace", color: entry.role === "agent" ? C.accent : C.green, paddingTop: 2, flexShrink: 0, width: 28 }}>
-                    {entry.role === "agent" ? "ALEX" : "PT"}
+                  <span style={{
+                    fontSize: 9, fontWeight: 700, fontFamily: "monospace",
+                    color: entry.role === "agent" ? "var(--accent-clinical)" : "var(--accent-success)",
+                    paddingTop: 2, flexShrink: 0, width: 26, letterSpacing: "0.04em",
+                  }}>
+                    {entry.role === "agent" ? "AI" : "PT"}
                   </span>
-                  <span style={{ fontSize: 12, color: C.text, lineHeight: 1.5 }}>{entry.text}</span>
+                  <span style={{ fontSize: 11, color: "var(--text-primary)", lineHeight: 1.5 }}>
+                    {entry.text}
+                  </span>
                 </div>
               ))
             )}
@@ -461,21 +511,45 @@ function VoiceAgentInner({
         </div>
 
         {/* RIGHT: workflow + warnings */}
-        <div style={{ display: "flex", flexDirection: "column", gap: 10, minHeight: 0, overflow: "hidden" }}>
+        <div style={{ display: "flex", flexDirection: "column", gap: 8, minHeight: 0, overflow: "hidden" }}>
 
-          <div style={{ display: "flex", flexDirection: "column", gap: 4 }}>
-            <span style={{ fontSize: 10, fontWeight: 600, color: C.muted, letterSpacing: "0.6px", textTransform: "uppercase" }}>Workflow</span>
-            <div style={{ background: "#fff", border: `1px solid ${C.border}`, borderRadius: 10, padding: "8px 10px", display: "flex", flexDirection: "column", gap: 5 }}>
+          <div style={{ display: "flex", flexDirection: "column", gap: 5 }}>
+            <span style={{
+              fontSize: 9, fontWeight: 700,
+              color: "var(--text-tertiary)", letterSpacing: "0.1em", textTransform: "uppercase",
+            }}>
+              Workflow
+            </span>
+            <div style={{
+              background: "var(--surface-inset)",
+              boxShadow: "inset 4px 4px 10px var(--shadow-dark), inset -4px -4px 10px var(--shadow-light)",
+              borderRadius: 10, padding: "8px 10px",
+              display: "flex", flexDirection: "column", gap: 4,
+            }}>
               {WORKFLOW_STEPS.map((step) => {
                 const isDone    = displayCompletedSteps.includes(step.id);
                 const isActive  = displayCurrentStep === step.id && !isDone;
                 const isPending = !isDone && !isActive && displayCurrentStep !== null;
                 return (
-                  <div key={step.id} style={{ display: "flex", alignItems: "center", gap: 6, opacity: isPending ? 0.4 : 1 }}>
-                    <div style={{ width: 14, height: 14, borderRadius: "50%", flexShrink: 0, background: isDone ? C.green : isActive ? C.accent : C.border, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 7, color: "#fff", fontWeight: 700, ...(isActive ? { animation: "pulseRing 1.4s ease-in-out infinite" } : {}) }}>
+                  <div key={step.id} style={{
+                    display: "flex", alignItems: "center", gap: 6,
+                    opacity: isPending ? 0.35 : 1,
+                    transition: "opacity 0.3s ease",
+                  }}>
+                    <div style={{
+                      width: 13, height: 13, borderRadius: "50%", flexShrink: 0,
+                      background: isDone ? "var(--accent-success)" : isActive ? "var(--accent-clinical)" : "var(--shadow-dark)",
+                      display: "flex", alignItems: "center", justifyContent: "center",
+                      fontSize: 7, color: "#fff", fontWeight: 700,
+                      ...(isActive ? { animation: "pulseRing 1.4s ease-in-out infinite" } : {}),
+                    }}>
                       {isDone ? "✓" : ""}
                     </div>
-                    <span style={{ fontSize: 10, lineHeight: 1.3, color: isDone ? C.green : isActive ? C.accent : C.text, fontWeight: isActive ? 700 : 400 }}>
+                    <span style={{
+                      fontSize: 10, lineHeight: 1.3,
+                      color: isDone ? "var(--accent-success)" : isActive ? "var(--accent-clinical)" : "var(--text-secondary)",
+                      fontWeight: isActive ? 600 : 400,
+                    }}>
                       {step.label}
                     </span>
                   </div>
@@ -486,12 +560,28 @@ function VoiceAgentInner({
 
           {displayWarnings.length > 0 && (
             <div style={{ display: "flex", flexDirection: "column", gap: 4 }}>
-              <span style={{ fontSize: 10, fontWeight: 600, color: C.red, letterSpacing: "0.6px", textTransform: "uppercase" }}>⚠ Warnings</span>
+              <span style={{
+                fontSize: 9, fontWeight: 700,
+                color: "var(--warning-red)", letterSpacing: "0.1em", textTransform: "uppercase",
+              }}>
+                ⚠ Warnings
+              </span>
               <div style={{ display: "flex", flexDirection: "column", gap: 4, overflowY: "auto" }}>
                 {displayWarnings.map((w) => (
-                  <div key={w.id} style={{ background: w.severity === "urgent" ? "#fef2f2" : "#fffbeb", border: `1px solid ${w.severity === "urgent" ? "#fecaca" : "#fde68a"}`, borderRadius: 8, padding: "6px 8px" }}>
-                    <div style={{ fontSize: 8, fontWeight: 700, fontFamily: "monospace", color: w.severity === "urgent" ? C.red : C.amber, marginBottom: 2 }}>{w.severity.toUpperCase()}</div>
-                    <div style={{ fontSize: 10, color: C.text }}>{w.sign}</div>
+                  <div key={w.id} style={{
+                    background: w.severity === "urgent" ? "var(--warning-red-bg)" : "var(--warning-amber-bg)",
+                    borderLeft: `2px solid ${w.severity === "urgent" ? "var(--warning-red)" : "var(--warning-amber)"}`,
+                    borderRadius: "0 8px 8px 0",
+                    padding: "6px 8px",
+                  }}>
+                    <div style={{
+                      fontSize: 8, fontWeight: 700, letterSpacing: "0.08em",
+                      color: w.severity === "urgent" ? "var(--warning-red)" : "var(--warning-amber)",
+                      marginBottom: 2, textTransform: "uppercase",
+                    }}>
+                      {w.severity}
+                    </div>
+                    <div style={{ fontSize: 10, color: "var(--text-primary)" }}>{w.sign}</div>
                   </div>
                 ))}
               </div>
@@ -501,7 +591,7 @@ function VoiceAgentInner({
       </div>
 
       <style>{`
-        @keyframes pulseRing { 0%,100%{box-shadow:0 0 0 2px ${C.accent}44} 50%{box-shadow:0 0 0 5px ${C.accent}11} }
+        @keyframes pulseRing { 0%,100%{box-shadow:0 0 0 2px rgba(59,111,160,0.26)} 50%{box-shadow:0 0 0 5px rgba(59,111,160,0.07)} }
         @keyframes pulse     { 0%,100%{opacity:1;transform:scale(1)} 50%{opacity:.4;transform:scale(.7)} }
       `}</style>
     </div>
@@ -522,11 +612,14 @@ function StatusDot({ status, isSpeaking }: { status: string; isSpeaking: boolean
 
 // ── Public export ─────────────────────────────────────────────────────────────
 export default function VoiceAgentPanel({
-  onCallStart, onCallEnd, onStepUpdate, patientData, scenarioId,
+  onCallStart, onCallEnd, onStepUpdate, onDetailedStepUpdate, onSpeakingChange,
+  patientData, scenarioId,
 }: {
   onCallStart?: () => void;
   onCallEnd?: (data: { completedSteps: string[]; flaggedWarnings: { sign: string; severity: string }[]; transcript: string }) => void;
   onStepUpdate?: (steps: number, warnings: number) => void;
+  onDetailedStepUpdate?: (completedSteps: string[], currentStep: string | null) => void;
+  onSpeakingChange?: (isSpeaking: boolean) => void;
   patientData?: PatientVoiceData;
   scenarioId?: string;
 }) {
@@ -535,17 +628,38 @@ export default function VoiceAgentPanel({
   return (
     <ConversationProvider>
       <div style={{ display: "flex", flexDirection: "column", gap: 4, marginBottom: 4 }}>
-        <label style={{ fontSize: 10, fontWeight: 600, color: "#6b7a9e", letterSpacing: "0.6px", textTransform: "uppercase", fontFamily: "'Outfit', system-ui, sans-serif" }}>
+        <label style={{
+          fontSize: 10, fontWeight: 600, letterSpacing: "0.08em",
+          textTransform: "uppercase", color: "var(--text-tertiary)",
+          fontFamily: "var(--font-body)",
+        }}>
           Outbound Phone Number
-          <span style={{ fontWeight: 400, fontSize: 9, marginLeft: 6 }}>(leave blank to use browser mic)</span>
+          <span style={{ fontWeight: 400, fontSize: 9, marginLeft: 6, color: "var(--text-tertiary)", opacity: 0.7 }}>
+            (leave blank for browser mic)
+          </span>
         </label>
-        <input
-          type="tel"
-          placeholder="+1 (555) 000-0000"
-          value={phoneNumber}
-          onChange={(e) => setPhoneNumber(e.target.value)}
-          style={{ padding: "7px 10px", borderRadius: 8, border: "1px solid #dde3f5", fontSize: 12, fontFamily: "monospace", color: "#1a2340", background: "#fff", outline: "none", width: "100%", boxSizing: "border-box" }}
-        />
+        <div style={{
+          background: "var(--surface-inset)",
+          boxShadow: "inset 4px 4px 10px var(--shadow-dark), inset -4px -4px 10px var(--shadow-light)",
+          borderRadius: 12,
+          display: "flex", alignItems: "center", gap: 8,
+          padding: "9px 14px",
+        }}>
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="var(--text-tertiary)" strokeWidth="2" strokeLinecap="round">
+            <path d="M22 16.92v3a2 2 0 01-2.18 2 19.79 19.79 0 01-8.63-3.07A19.5 19.5 0 013.07 9.81a19.79 19.79 0 01-3.07-8.7A2 2 0 012.18 0h3a2 2 0 012 1.72c.127.96.361 1.903.7 2.81a2 2 0 01-.45 2.11L6.91 7.91a16 16 0 006.16 6.16l1.27-1.27a2 2 0 012.11-.45c.907.339 1.85.573 2.81.7A2 2 0 0122 16.92z"/>
+          </svg>
+          <input
+            type="tel"
+            placeholder="+1 (555) 000-0000"
+            value={phoneNumber}
+            onChange={(e) => setPhoneNumber(e.target.value)}
+            style={{
+              border: "none", outline: "none", background: "transparent",
+              fontFamily: "var(--font-body)", fontSize: 13, fontWeight: 400,
+              color: "var(--text-primary)", width: "100%",
+            }}
+          />
+        </div>
       </div>
       <VoiceAgentInner
         phoneNumber={phoneNumber}
@@ -554,6 +668,8 @@ export default function VoiceAgentPanel({
         onCallStart={onCallStart}
         onCallEnd={onCallEnd}
         onStepUpdate={onStepUpdate}
+        onDetailedStepUpdate={onDetailedStepUpdate}
+        onSpeakingChange={onSpeakingChange}
       />
     </ConversationProvider>
   );
