@@ -1,5 +1,5 @@
 "use client";
-import { useState, useRef, useEffect } from "react";
+import { useState, useRef, useEffect, Suspense } from "react";
 import { useSearchParams } from "next/navigation";
 import VoiceAgentPanel from "@/components/VoiceAgentPanel";
 import SummaryCard from "@/components/SummaryCard";
@@ -16,7 +16,7 @@ const B = {
 
 type CallStatus = "idle" | "live" | "done";
 
-export default function DashboardPage() {
+function DashboardPage() {
   const searchParams = useSearchParams();
   const scenarioMrn  = searchParams.get("scenario") ?? "847291";
 
@@ -212,5 +212,13 @@ export default function DashboardPage() {
         @keyframes pulse { 0%,100%{opacity:1;transform:scale(1)} 50%{opacity:.4;transform:scale(.7)} }
       `}</style>
     </div>
+  );
+}
+
+export default function Page() {
+  return (
+    <Suspense>
+      <DashboardPage />
+    </Suspense>
   );
 }
