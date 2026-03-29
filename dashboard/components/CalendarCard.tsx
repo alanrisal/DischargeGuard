@@ -91,7 +91,7 @@ export default function CalendarCard() {
       {/* Dates Grid */}
       <div style={{
         display: "grid", gridTemplateColumns: "repeat(7, 1fr)", gap: 2,
-        flex: 1,
+        flex: 1, paddingBottom: 16,
       }}>
         {cells.map((cell, idx) => {
           let bg = "transparent";

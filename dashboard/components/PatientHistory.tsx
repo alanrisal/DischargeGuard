@@ -1,5 +1,5 @@
 "use client";
-import { useState } from "react";
+import { useState, useRef, useEffect } from "react";
 import { usePatientData } from "@/lib/usePatientData";
 import { MoreHorizontal, Clock, ChevronRight, Activity, Calendar, Phone } from "lucide-react";
 
@@ -37,57 +37,111 @@ export default function PatientHistory({ callTime = "0:00", stepsDone = 0, compr
   const [tab, setTab] = useState<Tab>("prescriptions");
   const { prescriptions, loading, source } = usePatientData();
 
+  const rightColRef = useRef<HTMLDivElement>(null);
+  const [collapsed, setCollapsed] = useState(false);
+
+  useEffect(() => {
+    const el = rightColRef.current;
+    if (!el) return;
+    const handleScroll = () => {
+      setCollapsed(el.scrollTop > 40);
+    };
+    el.addEventListener("scroll", handleScroll, { passive: true });
+    return () => el.removeEventListener("scroll", handleScroll);
+  }, []);
+
+
+
+  const statRowStyle = (visible: boolean): React.CSSProperties => ({
+    maxHeight: visible ? "60px" : "0px",
+    opacity: visible ? 1 : 0,
+    overflow: "hidden",
+    transition: "all 0.3s cubic-bezier(0.4, 0, 0.2, 1)",
+    padding: visible ? "8px 0" : "0",
+    pointerEvents: visible ? "auto" : "none",
+    margin: 0,
+    borderBottom: visible ? "1px solid rgba(255,255,255,0.08)" : "none",
+  });
+
   return (
     <div style={{ display: "flex", flexDirection: "column", height: "100%", fontFamily: "'Inter', sans-serif" }}>
 
       {/* ── TOP SECTION — CALL STATS ── */}
-      <div style={{ background: "#1a1a2e", borderRadius: "20px 20px 0 0", padding: "18px 16px", color: "white", flexShrink: 0 }}>
-        {/* Header */}
-        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 12 }}>
-          <div style={{ fontSize: 15, fontWeight: 700, color: "white" }}>Call Session</div>
-          <MoreHorizontal size={16} color="rgba(255,255,255,0.5)" />
+      <div className="right-col-top" style={{ background: "#1a1a2e", borderRadius: "20px 20px 0 0", flexShrink: 0 }}>
+        {/* Part A — always visible, never touched by collapse logic */}
+        <div style={{
+          display: 'flex', alignItems: 'center',
+          justifyContent: 'space-between',
+          padding: '16px 16px 10px',
+          flexShrink: 0,
+        }}>
+          <span style={{ fontSize: 15, fontWeight: 700, color: 'white' }}>
+            Call Session
+          </span>
+          <MoreHorizontal size={16} color="rgba(255,255,255,0.4)" />
         </div>
 
-        {/* Call Time */}
-        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "10px 0", borderBottom: "1px solid rgba(255,255,255,0.08)" }}>
+        {/* Part B — collapsible stats, same transition logic as before */}
+        <div style={{
+          maxHeight: collapsed ? '90px' : '200px',
+          overflow: 'hidden',
+          transition: 'max-height 0.35s cubic-bezier(0.4, 0, 0.2, 1), padding 0.35s cubic-bezier(0.4, 0, 0.2, 1)',
+          padding: collapsed ? '0 16px 10px' : '0 16px 14px',
+        }}>
+
+        {/* Call Time (Visible when collapsed) */}
+        <div style={{
+          display: "flex", alignItems: "center", justifyContent: "space-between",
+          padding: collapsed ? "4px 0" : "8px 0",
+          transition: "all 0.3s cubic-bezier(0.4, 0, 0.2, 1)",
+          borderBottom: collapsed ? "none" : "1px solid rgba(255,255,255,0.08)"
+        }}>
           <div style={{ display: "flex", flexDirection: "column", gap: 4 }}>
-            <span style={{ fontSize: 10, fontWeight: 600, letterSpacing: "0.08em", textTransform: "uppercase", color: "rgba(255,255,255,0.4)" }}>Call Time</span>
+            <span style={{ fontSize: collapsed ? 9 : 10, fontWeight: 600, letterSpacing: "0.08em", textTransform: "uppercase", color: "rgba(255,255,255,0.4)", transition: "font-size 0.3s ease" }}>Call Time</span>
             <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
-              <Clock size={12} color="rgba(255,255,255,0.5)" />
-              <span style={{ fontSize: 14, fontWeight: 600, color: "white" }}>{callTime}</span>
+              {!collapsed && <Clock size={12} color="rgba(255,255,255,0.5)" />}
+              <span style={{ fontSize: collapsed ? 12 : 14, fontWeight: 700, color: "white", transition: "font-size 0.3s ease" }}>{callTime}</span>
             </div>
           </div>
-          <span style={{ background: "#0d9488", color: "white", borderRadius: 6, padding: "4px 10px", fontSize: 11, fontWeight: 700 }}>
+          <span style={{ background: "#0d9488", color: "white", borderRadius: 6, padding: collapsed ? "2px 8px" : "4px 10px", fontSize: 11, fontWeight: 700, transition: "all 0.3s ease" }}>
             COMPLETE
           </span>
         </div>
 
-        {/* Warnings */}
-        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "10px 0", borderBottom: "1px solid rgba(255,255,255,0.08)" }}>
+        {/* Warnings (Visible when collapsed) */}
+        <div style={{
+          display: "flex", alignItems: "center", justifyContent: "space-between",
+          padding: collapsed ? "4px 0" : "8px 0",
+          transition: "all 0.3s cubic-bezier(0.4, 0, 0.2, 1)",
+          borderBottom: collapsed ? "none" : "1px solid rgba(255,255,255,0.08)"
+        }}>
           <div style={{ display: "flex", flexDirection: "column", gap: 4 }}>
-            <span style={{ fontSize: 10, fontWeight: 600, letterSpacing: "0.08em", textTransform: "uppercase", color: "rgba(255,255,255,0.4)" }}>Warnings</span>
+            <span style={{ fontSize: collapsed ? 9 : 10, fontWeight: 600, letterSpacing: "0.08em", textTransform: "uppercase", color: "rgba(255,255,255,0.4)", transition: "font-size 0.3s ease" }}>Warnings</span>
             <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
-              <Activity size={12} color="rgba(255,255,255,0.5)" />
-              <span style={{ fontSize: 14, fontWeight: 600, color: "white" }}>{warnings} Urgent</span>
+              {!collapsed && <Activity size={12} color="rgba(255,255,255,0.5)" />}
+              <span style={{ fontSize: collapsed ? 12 : 14, fontWeight: 700, color: "white", transition: "font-size 0.3s ease" }}>{warnings} Urgent</span>
             </div>
           </div>
-          <span style={{ background: warnings > 0 ? "#991b1b" : "rgba(255,255,255,0.1)", color: "white", borderRadius: 6, padding: "4px 10px", fontSize: 11, fontWeight: 700 }}>
+          <span style={{ background: warnings > 0 ? "#991b1b" : "rgba(255,255,255,0.1)", color: "white", borderRadius: 6, padding: collapsed ? "2px 8px" : "4px 10px", fontSize: 11, fontWeight: 700, transition: "all 0.3s ease" }}>
             {warnings > 0 ? `${warnings} Detected` : "Clear"}
           </span>
         </div>
 
-        {/* Comprehension */}
-        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "10px 0" }}>
-          <div style={{ display: "flex", flexDirection: "column", gap: 4 }}>
-            <span style={{ fontSize: 10, fontWeight: 600, letterSpacing: "0.08em", textTransform: "uppercase", color: "rgba(255,255,255,0.4)" }}>Comprehension</span>
-            <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
-              <span style={{ fontSize: 14, fontWeight: 600, color: "white" }}>{comprehension}% Validated</span>
+        {/* Comprehension (Hidden when collapsed) */}
+        <div style={statRowStyle(!collapsed)}>
+          <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", width: "100%" }}>
+            <div style={{ display: "flex", flexDirection: "column", gap: 4 }}>
+              <span style={{ fontSize: 10, fontWeight: 600, letterSpacing: "0.08em", textTransform: "uppercase", color: "rgba(255,255,255,0.4)" }}>Comprehension</span>
+              <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
+                <span style={{ fontSize: 14, fontWeight: 600, color: "white" }}>{comprehension}% Validated</span>
+              </div>
             </div>
+            <span style={{ background: "rgba(255,255,255,0.1)", color: "white", borderRadius: 6, padding: "4px 10px", fontSize: 11, fontWeight: 700 }}>
+              {stepsDone} Steps
+            </span>
           </div>
-          <span style={{ background: "rgba(255,255,255,0.1)", color: "white", borderRadius: 6, padding: "4px 10px", fontSize: 11, fontWeight: 700 }}>
-            {stepsDone} Steps
-          </span>
         </div>
+      </div>
       </div>
 
       {/* ── BOTTOM SECTION — MEDICATIONS LIST ── */}
@@ -96,7 +150,14 @@ export default function PatientHistory({ callTime = "0:00", stepsDone = 0, compr
         {/* Header row */}
         <div style={{ padding: "14px 16px 8px", display: "flex", alignItems: "center", justifyContent: "space-between", flexShrink: 0 }}>
           {/* Tab Switcher */}
-          <div style={{ display: "flex", gap: 0, background: "rgba(255,255,255,0.08)", borderRadius: 999, padding: 3 }}>
+          <div style={{
+            display: "flex", gap: 0,
+            background: collapsed ? "rgba(255,255,255,0.1)" : "rgba(255,255,255,0.08)",
+            borderRadius: 999,
+            padding: collapsed ? 4 : 3,
+            marginTop: collapsed ? 8 : 0,
+            transition: "all 0.35s cubic-bezier(0.4, 0, 0.2, 1)",
+          }}>
             {TABS.map((t) => {
               const isActive = tab === t.id;
               const color = isActive ? "white" : "rgba(255,255,255,0.4)";
@@ -104,22 +165,28 @@ export default function PatientHistory({ callTime = "0:00", stepsDone = 0, compr
                 <button
                   key={t.id} onClick={() => setTab(t.id)}
                   style={{
-                    borderRadius: 999, padding: "5px 14px", fontSize: 12, fontWeight: 600,
+                    borderRadius: 999,
+                    padding: collapsed ? "8px 18px" : "5px 14px",
+                    fontSize: collapsed ? 14 : 12,
+                    fontWeight: collapsed ? 700 : 600,
                     border: "none", cursor: "pointer", display: "flex", gap: 6, alignItems: "center",
-                    background: isActive ? "#0d9488" : "transparent", color, transition: "0.2s ease",
+                    background: isActive ? "#0d9488" : "transparent", color,
+                    transition: "all 0.35s cubic-bezier(0.4, 0, 0.2, 1)",
                   }}
                 >
-                  {t.icon(color)}
+                  <div style={{ transform: collapsed ? 'scale(1.2)' : 'scale(1)', transition: "transform 0.35s cubic-bezier(0.4, 0, 0.2, 1)", display: 'flex' }}>
+                    {t.icon(color)}
+                  </div>
                   {t.label}
                 </button>
               );
             })}
           </div>
-          <MoreHorizontal size={16} color="rgba(255,255,255,0.4)" style={{ cursor: "pointer" }} />
+          {!collapsed && <MoreHorizontal size={16} color="rgba(255,255,255,0.4)" style={{ cursor: "pointer" }} />}
         </div>
 
         {/* Scrollable list */}
-        <div className="dark-scroll" style={{ flex: 1, overflowY: "auto", padding: "0 10px 10px", display: "flex", flexDirection: "column" }}>
+        <div ref={rightColRef} className="dark-scroll" style={{ flex: 1, minHeight: 0, overflowY: "auto", padding: "0 10px 10px", display: "flex", flexDirection: "column" }}>
           <style>{`
             .dark-scroll::-webkit-scrollbar { width: 4px; }
             .dark-scroll::-webkit-scrollbar-track { background: transparent; }

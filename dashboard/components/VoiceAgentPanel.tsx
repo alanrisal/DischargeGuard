@@ -2,7 +2,7 @@
 import { useEffect, useRef, useState } from "react";
 import { ConversationProvider } from "@elevenlabs/react";
 import { useVoiceAgent, WORKFLOW_STEPS } from "@/lib/useVoiceAgent";
-import { CheckCircle2, ChevronRight } from "lucide-react";
+import { CheckCircle2, ChevronRight, AlertTriangle, ShieldCheck } from "lucide-react";
 
 const C = {
   accent:  "var(--md-sys-color-primary)",
@@ -42,6 +42,7 @@ function VoiceAgentInner({ onCallStart, onCallEnd, onStepUpdate }: {
 
   const [callStatus, setCallStatus] = useState<'idle' | 'active' | 'ended'>('idle');
   const [callTime, setCallTime] = useState("0:00");
+  const [transcriptExpanded, setTranscriptExpanded] = useState(false);
   const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const startRef = useRef<number>(0);
 
@@ -211,11 +212,11 @@ function VoiceAgentInner({ onCallStart, onCallEnd, onStepUpdate }: {
     <div style={{ display: "flex", flexDirection: "column", gap: 16, height: "100%", fontFamily: "'Inter', sans-serif" }}>
 
       {/* ── Top Card: Voice Agent + Call Controls ── */}
-      <div style={{ ...glassCSS, padding: 20, flexShrink: 0 }}>
+      <div style={{ ...glassCSS, padding: "10px 16px", flexShrink: 0 }}>
         {/* Top bar */}
         <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
           <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-            <span style={{ fontSize: 16, fontWeight: 600, color: C.text }}>Voice Agent</span>
+            <span style={{ fontSize: 13, fontWeight: 600, color: C.text }}>Voice Agent</span>
             <StatusDot callStatus={callStatus} />
           </div>
           <button
@@ -240,31 +241,70 @@ function VoiceAgentInner({ onCallStart, onCallEnd, onStepUpdate }: {
         </div>
 
         {/* Stats row */}
-        <div style={{ display: "flex", gap: 12, marginTop: 14 }}>
+        <div style={{ display: "flex", gap: 8, marginTop: 8, flexShrink: 0 }}>
           {/* Steps Done */}
-          <div style={{ background: "rgba(255,255,255,0.8)", borderRadius: 12, padding: "10px 16px", flex: 1, textAlign: "center", boxShadow: "0 2px 8px rgba(0,0,0,0.06)" }}>
-            <div style={{ fontSize: 22, fontWeight: 700, color: C.green }}>{completedSteps.length}/9</div>
-            <div style={{ fontSize: 11, color: "#6b7280", marginTop: 2 }}>Steps Done</div>
+          <div style={{ background: "rgba(255,255,255,0.8)", borderRadius: 10, padding: "6px 10px", flex: 1, textAlign: "center", boxShadow: "0 2px 8px rgba(0,0,0,0.06)" }}>
+            <div style={{ fontSize: 16, fontWeight: 700, color: C.green }}>{completedSteps.length}/9</div>
+            <div style={{ fontSize: 10, color: "#6b7280" }}>Steps Done</div>
           </div>
           {/* Comprehension */}
-          <div style={{ background: "rgba(255,255,255,0.8)", borderRadius: 12, padding: "10px 16px", flex: 1, textAlign: "center", boxShadow: "0 2px 8px rgba(0,0,0,0.06)" }}>
-            <div style={{ fontSize: 22, fontWeight: 700, color: C.red }}>{compScore}%</div>
-            <div style={{ fontSize: 11, color: "#6b7280", marginTop: 2 }}>Comprehension</div>
+          <div style={{ background: "rgba(255,255,255,0.8)", borderRadius: 10, padding: "6px 10px", flex: 1, textAlign: "center", boxShadow: "0 2px 8px rgba(0,0,0,0.06)" }}>
+            <div style={{ fontSize: 16, fontWeight: 700, color: C.red }}>{compScore}%</div>
+            <div style={{ fontSize: 10, color: "#6b7280" }}>Comprehension</div>
           </div>
           {/* Call Duration */}
-          <div style={{ background: "rgba(255,255,255,0.8)", borderRadius: 12, padding: "10px 16px", flex: 1, textAlign: "center", boxShadow: "0 2px 8px rgba(0,0,0,0.06)" }}>
-            <div style={{ fontSize: 22, fontWeight: 700, color: C.blue }}>{callTime}</div>
-            <div style={{ fontSize: 11, color: "#6b7280", marginTop: 2 }}>Call Duration</div>
+          <div style={{ background: "rgba(255,255,255,0.8)", borderRadius: 10, padding: "6px 10px", flex: 1, textAlign: "center", boxShadow: "0 2px 8px rgba(0,0,0,0.06)" }}>
+            <div style={{ fontSize: 16, fontWeight: 700, color: C.blue }}>{callTime}</div>
+            <div style={{ fontSize: 10, color: "#6b7280" }}>Call Duration</div>
           </div>
         </div>
       </div>
 
-      {/* ── Middle: LIVE TRANSCRIPT CARD ── */}
-      <div style={{ ...glassCSS, flex: 1, padding: "16px 20px", display: "flex", flexDirection: "column", minHeight: 0, overflow: "hidden" }}>
+      {/* ── Row 2: Live Transcript — grows when expanded ── */}
+      <div style={{
+        ...glassCSS,
+        flex: transcriptExpanded ? '1 1 100%' : '1 1 0%',
+        minHeight: 0,
+        overflow: 'hidden',
+        display: 'flex',
+        flexDirection: 'column',
+        padding: "16px 20px",
+        transition: 'flex 0.4s cubic-bezier(0.4, 0, 0.2, 1)',
+      }}>
         {/* Headers */}
-        <div style={{ display: "grid", gridTemplateColumns: "1fr 200px", gap: 16, marginBottom: 12, flexShrink: 0 }}>
-          <div style={uppercaseLabelCSS}>LIVE TRANSCRIPT</div>
-          <div style={uppercaseLabelCSS}>WORKFLOW</div>
+        <div style={{ display: "grid", gridTemplateColumns: "1fr 200px", gap: 16, marginBottom: 12, flexShrink: 0, alignItems: "center" }}>
+          <div style={{ ...uppercaseLabelCSS, margin: 0 }}>LIVE TRANSCRIPT</div>
+          <div style={{ display: "flex", alignItems: "center" }}>
+            <div style={{ ...uppercaseLabelCSS, margin: 0 }}>WORKFLOW</div>
+            <button
+              onClick={() => setTranscriptExpanded(prev => !prev)}
+              style={{
+                marginLeft: 'auto', width: '26px', height: '26px', borderRadius: '8px',
+                border: 'none', background: 'rgba(13,148,136,0.10)',
+                display: 'flex', alignItems: 'center', justifyContent: 'center',
+                cursor: 'pointer', flexShrink: 0, transition: 'background 0.2s ease',
+              }}
+              onMouseEnter={e => e.currentTarget.style.background = 'rgba(13,148,136,0.22)'}
+              onMouseLeave={e => e.currentTarget.style.background = 'rgba(13,148,136,0.10)'}
+              title={transcriptExpanded ? 'Collapse transcript' : 'Expand transcript'}
+            >
+              {transcriptExpanded ? (
+                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#0d9488" strokeWidth="2.5" strokeLinecap="round">
+                  <polyline points="4 14 10 14 10 20"/>
+                  <polyline points="20 10 14 10 14 4"/>
+                  <line x1="10" y1="14" x2="3" y2="21"/>
+                  <line x1="21" y1="3" x2="14" y2="10"/>
+                </svg>
+              ) : (
+                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#0d9488" strokeWidth="2.5" strokeLinecap="round">
+                  <polyline points="15 3 21 3 21 9"/>
+                  <polyline points="9 21 3 21 3 15"/>
+                  <line x1="21" y1="3" x2="14" y2="10"/>
+                  <line x1="3" y1="21" x2="10" y2="14"/>
+                </svg>
+              )}
+            </button>
+          </div>
         </div>
 
         {/* Content Side by Side */}
@@ -314,8 +354,19 @@ function VoiceAgentInner({ onCallStart, onCallEnd, onStepUpdate }: {
         </div>
       </div>
 
-      {/* ── Bottom Row: Call Highlights + Workflow Progress ── */}
-      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 16, flexShrink: 0 }}>
+      {/* ── Row 3: Bottom row (Call Highlights + Warnings) — collapses when expanded ── */}
+      <div style={{
+        flexShrink: 0,
+        overflow: 'hidden',
+        maxHeight: transcriptExpanded ? '0px' : '300px',
+        opacity: transcriptExpanded ? 0 : 1,
+        pointerEvents: transcriptExpanded ? 'none' : 'auto',
+        transition: [
+          'max-height 0.4s cubic-bezier(0.4, 0, 0.2, 1)',
+          `opacity 0.25s ease ${transcriptExpanded ? '0s' : '0.1s'}`
+        ].join(', '),
+      }}>
+        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 16, paddingTop: "0px" }}>
         {/* Call Highlights */}
         <div style={{ ...glassCSS, padding: "16px 20px" }}>
           <div style={{ ...uppercaseLabelCSS, marginBottom: 12 }}>CALL HIGHLIGHTS</div>
@@ -337,25 +388,57 @@ function VoiceAgentInner({ onCallStart, onCallEnd, onStepUpdate }: {
           </div>
         </div>
 
-        {/* Workflow Progress List */}
+        {/* Warnings Card */}
         <div style={{ ...glassCSS, padding: "16px 20px", overflowY: "auto", maxHeight: 200 }}>
-          <div style={{ ...uppercaseLabelCSS, marginBottom: 12 }}>WORKFLOW PROGRESS</div>
-          <div style={{ display: "flex", flexDirection: "column" }}>
-            {WORKFLOW_STEPS.map((step) => {
-              const isDone = completedSteps.includes(step.id);
-              return (
-                <div key={step.id} style={{
-                  display: "flex", alignItems: "center", gap: 10,
-                  padding: "10px 0", borderBottom: "1px solid rgba(0,0,0,0.05)"
-                }}>
-                  {isDone ? <CheckCircle2 size={16} color={C.green} /> : <div style={{ width: 14, height: 14, borderRadius: "50%", border: "2px solid #d1d5db" }}/>}
-                  <span style={{ fontSize: 14, color: "#374151" }}>{step.label}</span>
-                  <ChevronRight size={14} color="#9ca3af" style={{ marginLeft: "auto" }} />
+          {/* Header row */}
+          <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 12 }}>
+            <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+              <div style={{
+                background: "#991b1b", color: "white", borderRadius: 10,
+                padding: "4px 12px", fontSize: 20, fontWeight: 700,
+              }}>
+                {flaggedWarnings.length}
+              </div>
+              <div>
+                <div style={{ fontSize: 14, fontWeight: 700, color: "#1a1a2e" }}>Warnings</div>
+                <div style={{ fontSize: 11, color: "#9ca3af" }}>
+                  {flaggedWarnings.length === 0 ? "No issues detected" : "Requires attention"}
                 </div>
-              );
-            })}
+              </div>
+            </div>
+            <div style={uppercaseLabelCSS}>THIS SESSION</div>
+          </div>
+
+          {/* Warning items list */}
+          <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+            {flaggedWarnings.length === 0 ? (
+              <div style={{
+                display: "flex", flexDirection: "column", alignItems: "center",
+                justifyContent: "center", padding: "32px 16px", gap: 10
+              }}>
+                <ShieldCheck size={36} color="#0d9488" opacity={0.4} />
+                <div style={{ fontSize: 13, color: "#9ca3af", textAlign: "center" }}>No warnings this session</div>
+              </div>
+            ) : (
+              flaggedWarnings.map((w, i) => (
+                <div key={w.id || i} style={{
+                  display: "flex", alignItems: "flex-start", gap: 10,
+                  background: "#fef2f2", borderRadius: 12, padding: "12px 14px", borderLeft: "3px solid #991b1b"
+                }}>
+                  <AlertTriangle size={16} color="#dc2626" style={{ flexShrink: 0, marginTop: 1 }} />
+                  <div>
+                    <div style={{ fontSize: 13, fontWeight: 600, color: "#1a1a2e", textTransform: "capitalize" }}>
+                      {w.severity} Alert
+                    </div>
+                    <div style={{ fontSize: 12, color: "#6b7280", marginTop: 2 }}>{w.sign}</div>
+                    <div style={{ fontSize: 10, color: "#9ca3af", marginTop: 4 }}>Just now</div>
+                  </div>
+                </div>
+              ))
+            )}
           </div>
         </div>
+      </div>
       </div>
 
       <style>{`
@@ -392,8 +475,8 @@ function StatusDot({ callStatus }: { callStatus: 'idle' | 'active' | 'ended' }) 
 
   return (
     <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-      <div className={callStatus === 'active' ? "dot-live" : ""} style={{ width: 8, height: 8, borderRadius: "50%", background: color }} />
-      <span style={{ fontSize: 12, color: "#6b7280", fontWeight: 500 }}>{label}</span>
+      <div className={callStatus === 'active' ? "dot-live" : ""} style={{ width: 6, height: 6, borderRadius: "50%", background: color }} />
+      <span style={{ fontSize: 11, color: "#9ca3af", fontWeight: 500 }}>{label}</span>
     </div>
   );
 }

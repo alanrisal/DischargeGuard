@@ -202,8 +202,8 @@ export default function DashboardPage() {
         </div>
 
         {/* Page Title */}
-        <div style={{ padding: "16px 28px 12px", flexShrink: 0 }}>
-          <h1 style={{ fontSize: 28, fontWeight: 700, color: "#1a1a2e", margin: 0 }}>
+        <div style={{ paddingTop: 40, paddingBottom: 36, paddingLeft: 28, paddingRight: 28, marginBottom: 0, flexShrink: 0 }}>
+          <h1 style={{ fontSize: 36, fontWeight: 700, lineHeight: 1.2, color: "#1a1a2e", margin: 0 }}>
             Welcome back, <span style={{ color: "#0d9488" }}>Maria Garcia</span>
           </h1>
         </div>
@@ -211,17 +211,17 @@ export default function DashboardPage() {
         {/* Main Grid Content */}
         <div style={{
           display: "grid", gridTemplateColumns: "280px 1fr 1fr 300px", gridTemplateRows: "minmax(0, 1fr)",
-          gap: 16, padding: "0 28px 28px", flex: 1, overflow: "hidden"
+          gap: 16, padding: "0 28px 28px", flex: 1, minHeight: 0, overflow: "hidden", height: "auto"
         }}>
           
           {/* Column 1: Patient Profile */}
-          <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
-            <PatientCard compScore={comp} />
-            <CalendarCard />
+          <div style={{ display: "flex", flexDirection: "column", gap: 16, height: "100%", overflow: "hidden" }}>
+            <div style={{ flexShrink: 0 }}><PatientCard compScore={comp} /></div>
+            <div style={{ flex: 1, minHeight: 0, display: "flex", flexDirection: "column" }}><CalendarCard /></div>
           </div>
 
           {/* Columns 2-3: Voice Agent Panel */}
-          <div style={{ gridColumn: "span 2", display: "flex", flexDirection: "column", gap: 16, overflow: "hidden" }}>
+          <div style={{ gridColumn: "span 2", display: "flex", flexDirection: "column", gap: 16, height: "100%", minHeight: 0, overflow: "hidden" }}>
             <VoiceAgentPanel
               onCallStart={handleCallStart}
               onCallEnd={handleCallEnd}
@@ -230,7 +230,7 @@ export default function DashboardPage() {
           </div>
 
           {/* Column 4: Medications Panel */}
-          <div style={{ display: "flex", flexDirection: "column", overflow: "hidden" }}>
+          <div style={{ display: "flex", flexDirection: "column", height: "100%", minHeight: 0, overflow: "hidden" }}>
             <PatientHistory
               callTime={callTime}
               stepsDone={completedSteps}
