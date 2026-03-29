@@ -29,9 +29,16 @@ interface Props {
   transcript: TranscriptEntry[];
   isConnected: boolean;
   isPhoneMode: boolean;
+  /** When this transcript is from a completed call, show date/time (e.g. "Mar 27, 2026 · 2:14 PM"). */
+  callTimeLabel?: string | null;
 }
 
-export default function ComprehensionTranscript({ transcript, isConnected, isPhoneMode }: Props) {
+export default function ComprehensionTranscript({
+  transcript,
+  isConnected,
+  isPhoneMode,
+  callTimeLabel,
+}: Props) {
   const containerRef = useRef<HTMLDivElement>(null);
 
   // "Jump to Friction" — scroll to first red/yellow entry
@@ -53,18 +60,31 @@ export default function ComprehensionTranscript({ transcript, isConnected, isPho
     <div style={{ display: "flex", flexDirection: "column", gap: 8, height: "100%", minHeight: 0 }}>
 
       {/* Header row */}
-      <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", flexShrink: 0 }}>
-        <span style={{
-          fontSize: 10, fontWeight: 700, letterSpacing: "0.1em",
-          textTransform: "uppercase", color: "var(--text-tertiary)",
-        }}>
-          Semantic Analysis Timeline
-          {isPhoneMode && (
-            <span style={{ fontWeight: 400, marginLeft: 6, letterSpacing: "0.03em", textTransform: "none" }}>
-              (~1–2 s delay)
+      <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", flexShrink: 0, flexWrap: "wrap", gap: 8 }}>
+        <div style={{ display: "flex", flexDirection: "column", gap: 3, minWidth: 0 }}>
+          <span style={{
+            fontSize: 10, fontWeight: 700, letterSpacing: "0.1em",
+            textTransform: "uppercase", color: "var(--text-tertiary)",
+          }}>
+            Semantic Analysis Timeline
+            {isPhoneMode && (
+              <span style={{ fontWeight: 400, marginLeft: 6, letterSpacing: "0.03em", textTransform: "none" }}>
+                (~1–2 s delay)
+              </span>
+            )}
+          </span>
+          {callTimeLabel ? (
+            <span style={{
+              fontSize: 11,
+              fontWeight: 600,
+              letterSpacing: "0.02em",
+              color: "var(--text-secondary)",
+              textTransform: "none",
+            }}>
+              Call · {callTimeLabel}
             </span>
-          )}
-        </span>
+          ) : null}
+        </div>
 
         {hasFriction && (
           <button

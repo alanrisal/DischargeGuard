@@ -1,6 +1,6 @@
 "use client";
-import { useEffect, useState } from "react";
-import { getPrescriptions, getVisits, getCallHistory, getAllPatients } from "./queries";
+import { useCallback, useEffect, useLayoutEffect, useState } from "react";
+import { getPrescriptions, getVisits, getCallHistory, getPatientByMrn } from "./queries";
 import {
   PATIENT_PRESCRIPTIONS, PATIENT_VISITS, PATIENT_CALL_HISTORY,
   WEI_PRESCRIPTIONS, WEI_VISITS, WEI_CALL_HISTORY,
@@ -18,7 +18,8 @@ export type VisitRow = {
 export type CallRow = {
   date: string; time: string; duration: string; type: string; status: string;
   agent: string; language_code: string; comprehension_score: number;
-  flags: string[]; summary: string; elevenlabs_conversation_id: string | null;
+  flags: string[]; summary: string; transcript: string | null;
+  elevenlabs_conversation_id: string | null;
 };
 
 type DemoDataSet = {
@@ -35,55 +36,114 @@ function getDemoData(scenarioId: string): DemoDataSet {
   }
 }
 
+function applyDemoRows(scenarioId: string) {
+  const demo = getDemoData(scenarioId);
+  return {
+    prescriptions: demo.prescriptions.map((r) => ({
+      name: r.name, purpose: r.purpose, status: r.status, prescribed_by: r.by, prescribed_date: r.prescribed, refills: r.refills,
+    })),
+    visits: demo.visits.map((v) => ({
+      date: v.date, type: v.type, provider: v.provider, department: v.dept, notes: v.note,
+    })),
+    calls: demo.calls.map((c) => ({
+      date: c.date, time: c.time, duration: c.duration, type: c.type, status: c.status, agent: c.agent, language_code: c.language,
+      comprehension_score: c.comprehension, flags: c.flags, summary: c.summary, transcript: null as string | null,
+      elevenlabs_conversation_id: null as string | null,
+    })),
+  };
+}
+
 export function usePatientData(scenarioId = "maria") {
-  const [prescriptions, setPrescriptions] = useState<RxRow[]>([]);
-  const [visits, setVisits]               = useState<VisitRow[]>([]);
-  const [calls, setCalls]                 = useState<CallRow[]>([]);
-  const [loading, setLoading]             = useState(true);
+  const [prescriptions, setPrescriptions] = useState<RxRow[]>(() => applyDemoRows(scenarioId).prescriptions);
+  const [visits, setVisits]               = useState<VisitRow[]>(() => applyDemoRows(scenarioId).visits);
+  const [calls, setCalls]                 = useState<CallRow[]>(() => applyDemoRows(scenarioId).calls);
   const [source, setSource]               = useState<"supabase" | "demo">("demo");
+  const [refreshTick, setRefreshTick]     = useState(0);
+
+  const refetch = useCallback(() => setRefreshTick((n) => n + 1), []);
+
+  useLayoutEffect(() => {
+    const rows = applyDemoRows(scenarioId);
+    setPrescriptions(rows.prescriptions);
+    setVisits(rows.visits);
+    setCalls(rows.calls);
+    setSource("demo");
+  }, [scenarioId]);
 
   useEffect(() => {
+    let cancelled = false;
     const scenario = getScenario(scenarioId);
 
-    async function load() {
+    (async () => {
       try {
-        const patients = await getAllPatients();
-        const patient  = patients?.find((p: { mrn: string }) => p.mrn === scenario.mrn);
-
-        if (!patient) { fallback(); return; }
+        const patient = await getPatientByMrn(scenario.mrn);
+        if (cancelled || !patient) return;
 
         const [rxData, visitData, callData] = await Promise.all([
           getPrescriptions(patient.id),
           getVisits(patient.id),
           getCallHistory(patient.id),
         ]);
+        if (cancelled) return;
 
-        if (!rxData?.length && !visitData?.length && !callData?.length) {
-          fallback(); return;
-        }
-
-        if (rxData?.length)    setPrescriptions(rxData.map((r: any) => ({ name: r.name, purpose: r.purpose, status: r.status, prescribed_by: r.prescribed_by, prescribed_date: r.prescribed_date, refills: r.refills })));
-        if (visitData?.length) setVisits(visitData.map((v: any) => ({ date: v.date, type: v.type, provider: v.provider, department: v.department, notes: v.notes })));
-        if (callData?.length)  setCalls(callData.map((c: any) => ({ date: c.date, time: c.time, duration: c.duration, type: c.type, status: c.status, agent: c.agent, language_code: c.language_code, comprehension_score: c.comprehension_score, flags: c.flags ?? [], summary: c.summary, elevenlabs_conversation_id: c.elevenlabs_conversation_id })));
         setSource("supabase");
+
+        setPrescriptions(
+          rxData?.length
+            ? rxData.map((r: any) => ({
+                name: r.name,
+                purpose: r.purpose,
+                status: r.status,
+                prescribed_by: r.prescribed_by,
+                prescribed_date: r.prescribed_date,
+                refills: r.refills,
+              }))
+            : []
+        );
+        setVisits(
+          visitData?.length
+            ? visitData.map((v: any) => ({
+                date: v.date,
+                type: v.type,
+                provider: v.provider,
+                department: v.department,
+                notes: v.notes,
+              }))
+            : []
+        );
+        setCalls(
+          callData?.length
+            ? callData.map((c: any) => ({
+                date: c.date,
+                time: c.time,
+                duration: c.duration,
+                type: c.type,
+                status: c.status,
+                agent: c.agent,
+                language_code: c.language_code,
+                comprehension_score: c.comprehension_score,
+                flags: c.flags ?? [],
+                summary: c.summary,
+                transcript: (c.transcript as string | null | undefined) ?? null,
+                elevenlabs_conversation_id: c.elevenlabs_conversation_id,
+              }))
+            : []
+        );
       } catch {
-        fallback();
-      } finally {
-        setLoading(false);
+        /* keep demo rows */
       }
-    }
+    })();
 
-    function fallback() {
-      const demo = getDemoData(scenarioId);
-      setPrescriptions(demo.prescriptions.map((r) => ({ name: r.name, purpose: r.purpose, status: r.status, prescribed_by: r.by, prescribed_date: r.prescribed, refills: r.refills })));
-      setVisits(demo.visits.map((v) => ({ date: v.date, type: v.type, provider: v.provider, department: v.dept, notes: v.note })));
-      setCalls(demo.calls.map((c) => ({ date: c.date, time: c.time, duration: c.duration, type: c.type, status: c.status, agent: c.agent, language_code: c.language, comprehension_score: c.comprehension, flags: c.flags, summary: c.summary, elevenlabs_conversation_id: null })));
-      setSource("demo");
-      setLoading(false);
-    }
+    return () => {
+      cancelled = true;
+    };
+  }, [scenarioId, refreshTick]);
 
-    load();
-  }, [scenarioId]);
+  useEffect(() => {
+    if (source !== "supabase") return;
+    const id = setInterval(() => setRefreshTick((n) => n + 1), 25_000);
+    return () => clearInterval(id);
+  }, [source]);
 
-  return { prescriptions, visits, calls, loading, source };
+  return { prescriptions, visits, calls, loading: false, source, refetch };
 }

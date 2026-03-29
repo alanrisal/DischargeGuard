@@ -621,6 +621,7 @@ function StatusDot({ status, isSpeaking }: { status: string; isSpeaking: boolean
 export default function VoiceAgentPanel({
   onCallStart, onCallEnd, onStepUpdate, onDetailedStepUpdate, onSpeakingChange,
   onTranscriptUpdate, patientData, scenarioId,
+  hideOutboundPhone = false,
 }: {
   onCallStart?: () => void;
   onCallEnd?: (data: { completedSteps: string[]; flaggedWarnings: { sign: string; severity: string }[]; transcript: string }) => void;
@@ -630,11 +631,14 @@ export default function VoiceAgentPanel({
   onTranscriptUpdate?: (transcript: TranscriptEntry[]) => void;
   patientData?: PatientVoiceData;
   scenarioId?: string;
+  /** Hide Twilio-style outbound field (patient portal uses browser mic only). */
+  hideOutboundPhone?: boolean;
 }) {
   const [phoneNumber, setPhoneNumber] = useState("");
 
   return (
     <ConversationProvider>
+      {!hideOutboundPhone && (
       <div style={{ display: "flex", flexDirection: "column", gap: 4, marginBottom: 4 }}>
         <label style={{
           fontSize: 10, fontWeight: 600, letterSpacing: "0.08em",
@@ -669,6 +673,7 @@ export default function VoiceAgentPanel({
           />
         </div>
       </div>
+      )}
       <VoiceAgentInner
         phoneNumber={phoneNumber}
         patientData={patientData}

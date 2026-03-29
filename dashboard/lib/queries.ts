@@ -1,6 +1,14 @@
-import { supabase } from "./supabase";
+import type { SupabaseClient } from "@supabase/supabase-js";
+import type { Database } from "./database.types";
+import { getSupabase } from "./supabase";
+
+function sb(): SupabaseClient<Database> | null {
+  return getSupabase();
+}
 
 export async function getPatient(id: string) {
+  const supabase = sb();
+  if (!supabase) return null;
   const { data, error } = await supabase
     .from("patients")
     .select("*")
@@ -11,6 +19,8 @@ export async function getPatient(id: string) {
 }
 
 export async function getAllPatients() {
+  const supabase = sb();
+  if (!supabase) return null;
   const { data, error } = await supabase
     .from("patients")
     .select("id, name, mrn, language, language_code, diagnosis")
@@ -19,7 +29,22 @@ export async function getAllPatients() {
   return data;
 }
 
+/** One row by MRN — faster than loading all patients for the portal. */
+export async function getPatientByMrn(mrn: string) {
+  const supabase = sb();
+  if (!supabase) return null;
+  const { data, error } = await supabase
+    .from("patients")
+    .select("id, name, mrn, language, language_code, diagnosis")
+    .eq("mrn", mrn)
+    .maybeSingle();
+  if (error) throw error;
+  return data;
+}
+
 export async function getPrescriptions(patientId: string) {
+  const supabase = sb();
+  if (!supabase) return null;
   const { data, error } = await supabase
     .from("prescriptions")
     .select("*")
@@ -30,6 +55,8 @@ export async function getPrescriptions(patientId: string) {
 }
 
 export async function getVisits(patientId: string) {
+  const supabase = sb();
+  if (!supabase) return null;
   const { data, error } = await supabase
     .from("visits")
     .select("*")
@@ -40,6 +67,8 @@ export async function getVisits(patientId: string) {
 }
 
 export async function getCallHistory(patientId: string) {
+  const supabase = sb();
+  if (!supabase) return null;
   const { data, error } = await supabase
     .from("call_history")
     .select("*")
@@ -50,6 +79,8 @@ export async function getCallHistory(patientId: string) {
 }
 
 export async function getDischargeChecklist(patientId: string) {
+  const supabase = sb();
+  if (!supabase) return null;
   const { data, error } = await supabase
     .from("discharge_checklists")
     .select("*")
@@ -70,11 +101,15 @@ export async function saveCallResult(result: {
   comprehension_score: number;
   flags: string[];
   summary: string;
+  transcript?: string | null;
   elevenlabs_conversation_id: string | null;
 }) {
+  const supabase = sb();
+  if (!supabase) throw new Error("Supabase is not configured; cannot save call result.");
+  const { transcript, ...rest } = result;
   const { data, error } = await supabase
     .from("call_history")
-    .insert(result)
+    .insert({ ...rest, transcript: transcript ?? null })
     .select()
     .single();
   if (error) throw error;

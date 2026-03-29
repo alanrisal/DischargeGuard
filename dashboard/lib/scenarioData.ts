@@ -69,3 +69,9 @@ export const SCENARIOS: Record<string, Scenario> = {
 export function getScenario(id: string): Scenario {
   return SCENARIOS[id] ?? SCENARIOS.maria;
 }
+
+/** Map hospital MRN to demo scenario id when opening the patient portal with ?mrn=. */
+export function getScenarioIdFromMrn(mrn: string): string | null {
+  const row = Object.entries(SCENARIOS).find(([, s]) => s.mrn === mrn);
+  return row ? row[0] : null;
+}

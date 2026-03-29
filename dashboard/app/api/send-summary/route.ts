@@ -166,6 +166,11 @@ export async function POST(req: NextRequest) {
           .from("patients").select("id").eq("mrn", patientMrn).single();
         if (patient) {
           const now = new Date();
+          const transcriptText =
+            typeof transcript === "string" && transcript.length > 120_000
+              ? transcript.slice(-120_000)
+              : (transcript as string) || "";
+
           await supabase.from("call_history").insert({
             patient_id:          patient.id,
             date:                now.toISOString().split("T")[0],
@@ -183,6 +188,7 @@ export async function POST(req: NextRequest) {
                 ((flaggedWarnings as { sign: string }[]).length > 0
                   ? `${(flaggedWarnings as { sign: string }[]).length} concern(s) flagged.`
                   : "No concerns flagged.")),
+            transcript:          transcriptText || null,
             elevenlabs_conversation_id: body.conversationId ?? null,
           });
         }

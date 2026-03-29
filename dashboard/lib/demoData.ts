@@ -40,8 +40,16 @@ export const CHECKLIST_JAMES: ChecklistItem[] = [
 ];
 
 export const SUBTITLES = [
-  { t: 1.5, es: "Hola, señora García. Le llama el hospital para ver cómo se encuentra.", en: "Hello, Mrs. García. The hospital is calling to see how you're doing." },
-  { t: 5,   es: "Primero, hablemos de sus medicamentos. ¿Ha podido tomar la metformina?", en: "First, let's talk about your medications. Have you been able to take metformin?" },
+  { t: 1.5, es: "Hola, señora García. Le llama el hospital para ver cómo se encuentra.", en: "Hi Maria, this is Bella from Riverside General Hospital." },
+  { t: 3, es: "", en: "We like to call folks after they head home just to make sure everything's going smoothly." },
+  { t: 4, es: "", en: "How have you been feeling since you got back? [warmly]" },
+  { t: 5.5, es: "", en: "Patient: \"I've been feeling a little better.\"" },
+  {
+    t: 6,
+    es: "",
+    en: "That's good to hear, Maria. A little better each day is exactly what we want to see. How are you managing with the pain from the surgery?",
+  },
+  { t: 8, es: "Primero, hablemos de sus medicamentos. ¿Ha podido tomar la metformina?", en: "First, let's talk about your medications. Have you been able to take metformin?" },
   { t: 10,  es: "Paciente: \"Creo que es la pastilla azul... ¿para la presión?\"", en: "Patient: \"I think it's the blue pill... for blood pressure?\"" },
   { t: 14,  es: "Entiendo, permítame explicarle mejor. La metformina es para la diabetes, no para la presión arterial.", en: "I understand, let me explain better. Metformin is for diabetes, not blood pressure." },
   { t: 19,  es: "Paciente: \"Ah sí, ahora entiendo. La tomo dos veces al día con las comidas.\"", en: "Patient: \"Ah yes, I understand now. I take it twice a day with meals.\"" },
@@ -54,6 +62,34 @@ export const SUBTITLES = [
   { t: 53,  es: "¿Recuerda su cita con el Dr. Thompson el 3 de abril a las 10 de la mañana?", en: "Do you remember your appointment with Dr. Thompson on April 3 at 10 AM?" },
   { t: 58,  es: "Paciente: \"Sí, lo tengo apuntado. Muchas gracias por llamar.\"", en: "Patient: \"Yes, I have it written down. Thank you so much for calling.\"" },
   { t: 62,  es: "Ha sido un placer. Una enfermera la llamará pronto. ¡Cuídese mucho!", en: "It's been a pleasure. A nurse will call you soon. Take good care!" },
+];
+
+/** English demo transcript for /my-care/wei semantic timeline (no Supabase yet). */
+export const SUBTITLES_WEI = [
+  { en: "Hi Wei, this is Bella from Riverside General Hospital cardiac care." },
+  { en: "We're checking in after your stent procedure — how are you feeling today?" },
+  { en: "Patient: \"A little tired, but the chest discomfort is much better.\"" },
+  { en: "That's reassuring. Are you taking your aspirin and clopidogrel exactly as prescribed?" },
+  { en: "Patient: \"I think so — the small white pill morning and night?\"" },
+  { en: "The clopidogrel is once daily; aspirin is usually once daily too — I'll confirm with your list. Any dizziness or shortness of breath?" },
+  { en: "Patient: \"No, not really.\"" },
+  { en: "Good. If you have chest pressure, trouble breathing, or fainting, call 911 or go to the ER right away." },
+  { en: "Patient: \"Understood. Thank you for calling.\"" },
+  { en: "You're welcome — take care, and we'll see you at your follow-up with Dr. Patel." },
+];
+
+/** English demo transcript for /my-care/james semantic timeline. */
+export const SUBTITLES_JAMES = [
+  { en: "Hi James, this is Bella from Riverside General Hospital orthopedics." },
+  { en: "I'm following up after your hip replacement — how is your pain on a scale of 1 to 10?" },
+  { en: "Patient: \"About a 4 when I move, but it's manageable with the medication.\"" },
+  { en: "Okay — use your pain meds as directed, and don't skip blood thinner doses. Any swelling or redness in the leg?" },
+  { en: "Patient: \"Maybe a little swelling — I'm not sure if it's normal.\"" },
+  { en: "Some swelling can be normal, but if one leg is much bigger, hot, or painful, we want you evaluated. Can you compare both legs for me?" },
+  { en: "Patient: \"The surgical side is a bit puffier, but not hot.\"" },
+  { en: "Thank you for checking. Keep using your walker, and call if redness spreads or you have fever or chest pain." },
+  { en: "Patient: \"Will do. Thanks.\"" },
+  { en: "Great — your PT visit is coming up; we'll see you at Dr. Nguyen's follow-up." },
 ];
 
 export const EVENTS = [

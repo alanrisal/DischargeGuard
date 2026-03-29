@@ -264,6 +264,36 @@ export default function LandingPage() {
 
           {/* CTA */}
           {showCta && (
+            <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 12 }}>
+            <Link href="/my-care" style={{ textDecoration: "none" }}>
+              <button
+                style={{
+                  background: "transparent",
+                  border: "1px solid rgba(240,235,227,0.18)",
+                  borderRadius: 999,
+                  padding: "10px 32px",
+                  fontFamily: "var(--font-body)",
+                  fontWeight: 500,
+                  fontSize: 13,
+                  letterSpacing: "0.06em",
+                  color: "rgba(240,235,227,0.85)",
+                  cursor: "pointer",
+                  animation: "slide-up 0.5s ease both",
+                  transition: "border-color 250ms ease, background 250ms ease",
+                }}
+                onMouseEnter={(e) => {
+                  (e.currentTarget as HTMLButtonElement).style.background = "rgba(240,235,227,0.08)";
+                  (e.currentTarget as HTMLButtonElement).style.borderColor = "rgba(240,235,227,0.35)";
+                }}
+                onMouseLeave={(e) => {
+                  (e.currentTarget as HTMLButtonElement).style.background = "transparent";
+                  (e.currentTarget as HTMLButtonElement).style.borderColor = "rgba(240,235,227,0.18)";
+                }}
+              >
+                My care portal →
+              </button>
+            </Link>
+
             <Link href="/patients" style={{ textDecoration: "none" }}>
               <button
                 style={{
@@ -294,6 +324,7 @@ export default function LandingPage() {
                 Open Dashboard →
               </button>
             </Link>
+            </div>
           )}
 
           {/* Bottom attribution */}
